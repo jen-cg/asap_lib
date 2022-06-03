@@ -605,7 +605,6 @@ def gen_mod_atm(name, params, working_path, print_params=False):
                        model_path=grid,
                        outpath=True,
                        out_path=working_path,
-                       outtype=True,
                        out_type='name')
 
     # ----------------- Cleanup the .alt files (delete them)
