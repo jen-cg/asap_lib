@@ -108,7 +108,7 @@ Input are:
     # For each spectrum:
     for s in spectra:
         # Get wavelength, flux, and error information
-        wave, flux, err = read_spec(os.path.join(s, spath))
+        wave, flux, err = read_spec(os.path.join(spath, s))
 
         olap_locs = []
 
@@ -276,7 +276,7 @@ def spec_ex(spectra,
     for s in spectra:
 
         # ----------------- Read in the data
-        wave, flux, err = read_spec(os.path.join(s, spath), ftype='bin')
+        wave, flux, err = read_spec(os.path.join(spath, s), ftype='bin')
 
         # ----------------- Start plot stuff
         if s_plot is True:
@@ -421,7 +421,7 @@ def spec_interp(spectra,
     for s in spectra:
 
         # ----------------- Read in the data
-        wave, flux, err = read_spec(os.path.join(s, spath), ftype='bin')
+        wave, flux, err = read_spec(os.path.join(spath, s), ftype='bin')
 
         # ----------------- Interpolate data onto new wavelength grid
         i_flux = np.interp(i_wave, wave, flux)
@@ -608,7 +608,7 @@ def deg_res(spectra, spath, start_res, new_res, resample=False, save_smo_spec=Tr
 
     for s in spectra:
 
-        wave, flux, err = read_spec(os.path.join(s, spath), ftype='bin')
+        wave, flux, err = read_spec(os.path.join(spath, s), ftype='bin')
 
         x0 = wave[0]  # Start wavelength
         xN = wave[-1]  # End wavelength
@@ -1014,7 +1014,7 @@ def rvcor(spectra,
 
         # ----------------- Read in (observed) spectra
         print(obs_path)
-        spectrum = read_spec(os.path.join(s, obs_path), ftype='bin')
+        spectrum = read_spec(os.path.join(obs_path, s), ftype='bin')
         wave = spectrum[0]
         flux = spectrum[1]
         err = spectrum[2]
