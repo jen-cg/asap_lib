@@ -1,0 +1,39 @@
+Developing a little "package" of functions to do this spectroscopy stuff with
+- Mainly Colin has very long files of functions and sometimes files have repeats of functions
+- I want to collate them all, so they do not repeat and all the functions can be in the same place.
+- I also want to tidy them a bit (to my preferences any way)
+
+- Eventually when I do ghost stuff this will form the basis of the GHOST version of the code
+
+Authors
+--------
+- Originally written by Colin Kielty.
+- Updated, and reorganized by Jennifer Glover
+
+
+Short Descriptions
+--------------------
+constants.py
+- File with constants such as solar abundances, element dictionaries, and the speed of light
+
+handleSpectra.py
+- File with functions to read spectra and convert them to different file systems
+
+spectra.py
+- File with functions to 'standardize_OPERA': combine, radial velocity correct, continuum normalize
+
+calc_abunds
+- File with functions to perform abundane calculations and conversions
+
+line_list_utils
+- File with functions to perform a variety of tasks with line lists such as read line lists, trim line lists,
+convert line lists to dictionaries, etc.
+
+moog_funcs
+- File with functions to perform the bulk of the MOOGENSTEIN analysis, essentially the main MOOG loopers.
+
+user_input_utils
+- File with functions to ask for a variety of input from the user
+
+auto_atmosphere
+- File with functions to generate a MARCS model atmosphere
