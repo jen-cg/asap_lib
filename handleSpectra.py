@@ -107,7 +107,7 @@ def i2xy(spectra, spath, xypath):
 
     # -----------------  Examine each spectrum
     for s in spectra:
-        wave, flux, err = read_spec(os.path.join(s, spath))
+        wave, flux, err = read_spec(os.path.join(spath, s))
 
         # Save spectrum as .xy file
         colheads = ['wave', 'flux', 'err']
@@ -192,7 +192,7 @@ def fits2xy(spectra, spaths, xypaths, xytype=None):
 
         name = s.split('.fits')[0]
 
-        wave, flux = read_spec(os.path.join(spaths[i],s), ftype='cfits')
+        wave, flux = read_spec(os.path.join(spaths[i], s), ftype='cfits')
 
         wave = np.asarray(wave)
         flux = np.asarray(flux)
@@ -239,7 +239,7 @@ def bin2DAOxy(spectra, spaths, xypaths, lims=None, masks=None):
 
     # ----------------- Examine each spectrum
     for i, s in enumerate(spectra):
-        wave, flux, err = read_spec(os.path.join(spaths[i],s), ftype='bin')
+        wave, flux, err = read_spec(os.path.join(spaths[i], s), ftype='bin')
         # name = s.split('.')[0]
         name = s.split('.comb')[0]
 
