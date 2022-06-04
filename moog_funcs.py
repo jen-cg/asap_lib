@@ -438,7 +438,8 @@ def run_moog():
     A python wrapper which runs the subprocess moog_silent_call
     """
     # Run MOOGSILENT!
-    mooged = subprocess.call(moog_silent_call)
+    # mooged = subprocess.call(moog_silent_call)
+    mooged = subprocess.call(moog_silent_call, stdout=open(os.devnull, 'wb'))  # To supress output from moog
 
     if mooged != 0:
         print('MOOG bonked, please check batch.par')

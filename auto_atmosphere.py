@@ -87,8 +87,8 @@ from functions.calc_abunds import *
 ###############################################################################################################################
 '''
 # Paths to model atmospheres
-spherical_model_atm_path = '/arc5/home/jglover/MARCS/grids/standard/sphere/'  # CHANGED
-plane_parallel_model_atm_path = '/arc5/home/jglover/MARCS/grids/standard/plane/'  # CHANGED
+spherical_model_atm_path = '/arc5/home/jglover/GRACES/Code/MARCS/grids/standard/sphere/'  # CHANGED
+plane_parallel_model_atm_path = '/arc5/home/jglover/GRACES/Code/MARCS/grids/standard/plane/'  # CHANGED
 
 '''
 ###################################
