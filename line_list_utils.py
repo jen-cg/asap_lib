@@ -300,11 +300,11 @@ def trim_lines_from_list(line_list, remove_lines, saveName=None):
     # ----------------- Save updated line list
     if saveName is None:
         with open(line_list, 'w') as f:
-            print('Saving trimmed line list to ' + line_list)
+            print('Saving trimmed list to ' + line_list)
             f.writelines(trimmed_list)
     else:
         with open(saveName, 'w') as f:
-            print('Saving trimmed line list to ' + saveName)
+            print('Saving trimmed list to ' + saveName)
             f.writelines(trimmed_list)
 
 
