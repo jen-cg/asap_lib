@@ -376,7 +376,7 @@ def mod_batch(batchpar,
                 new_lines = lines[:end_line] + add_lines
                 lines = new_lines
 
-    # ----------------- Write the new lines to batch.par
+    # ----------------- Write the modified lines to batch.par
     with open(batchpar, 'w') as file:
         file.writelines(lines)
 
@@ -384,7 +384,8 @@ def mod_batch(batchpar,
 # -----------------------------------------------------------------------------------------------------------------------
 def parse_synth_out(smoothed_out, n_synth):
     """
-    Parse the output from MOOG Synthesis
+    Parse the output synthetic spectra from MOOG Synthesis, specifically the MOOG smoothed_out files.
+    Usually these will be saved at name.sout
 
     :param smoothed_out: (string) MOOG output file
     :param n_synth: (float) Number of  syntheses that were run by MOOG
@@ -590,8 +591,8 @@ def determine_uls(obswave,
     # True if many lines (list, tuple, np.ndarray), False if single line (float)
     are_lines = isinstance(linewaves, (list, tuple, np.ndarray))
 
-    # ---------------- Define a window around the line. Large enough to have continuum, small enough to minimize effects
-    # of other lines
+    # ---------------- Define a window around the line(s). Large enough to have continuum, small enough to minimize
+    # effects of other lines
     if are_lines:
         # If there are many  lines given, take the min and max wavelength of those lines
         short = [np.min(linewaves) - wave_range, np.max(linewaves) + wave_range]
@@ -681,7 +682,8 @@ def fit_line(abund_info,
              rv_tol=5.0,
              print_rv=False):
     """
-    Fit an observed spectral line to a synthetic spectral line.
+    Fit an observed spectral line to a synthetic spectral line
+    (estimate how well the observed spectrum matches the synthetic one).
     That is, determine the depth of the synthetic spectral line, the radial velocity, and the Chi-squared residual
     between the synthetic and observed flux.
 
@@ -1178,8 +1180,8 @@ def moog_best_lines(spec_name,
         else:
             new_err = bests[2]
             abundances = [new_abund - new_err, new_abund, new_abund + new_err]
-            cs = ['r', 'b', 'r']
-            lsty = ['--', '-', '--']
+            cs = ['r', 'b', 'r'] # Line colour
+            lsty = ['--', '-', '--'] #Line style
 
         # ----------------- For each smoothing term:
         for smog in smogs:
@@ -1270,7 +1272,7 @@ def moog_best_lines(spec_name,
 # -----------------------------------------------------------------------------------------------------------------------
 def find_best_abunds(line_dict, ul_sigma=3.0):
     """
-    Using a dictionary of line information, find the best fit
+    Using a dictionary of line information, find the best fit between the observed spectrum and the synthetic spectras
 
     :param line_dict: (dict) A dictionary of line information.  Must include information about synthetic spectra
     :param ul_sigma: (float) If the line is an upper limit, use information about synthetic spectral lines which are
@@ -1424,104 +1426,6 @@ def find_best_abunds(line_dict, ul_sigma=3.0):
         line_dict[line]['Best'] = best_val
 
     return line_dict
-
-
-# -----------------------------------------------------------------------------------------------------------------------
-def trim_2_good_list(line_dict, new_list_name, new_moog_params, include_uls=False, all_uls=False):
-    """
-    Create a list of good lines from a dictionary
-
-    :param line_dict:  (dict) A dictionary of line information.  Must include information about the best fit
-    :param new_list_name: (string) Name of / path to the new line list
-    :param new_moog_params: (string) Name of / path to the
-    :param include_uls: (True/False)
-    :param all_uls: (True/False)
-
-
-    """
-
-    # ----------------- Extract relevant sections of the dictionary
-    keys = line_dict.keys()
-    lines = []
-    for k in keys:
-        if k != 'Atmosphere':
-            lines.append(k)
-
-    # ----------------- For each line in the dictionary:
-    new_list = ['# \n']  # An empty list for the new line list
-    moog_params = []  # An empty list for  the moog parameters file
-    for i, k in enumerate(lines):
-
-        # Extract information about the line:
-        best_info = line_dict[k]['Best']
-        ab_err = best_info[2]
-        atomic_info = line_dict[k]['Atomic Info']
-        ul_info = line_dict[k]['Upper Limit Info']
-        upper_limit = int(ul_info[-1])
-
-        # Get the size of each element
-        wave_len = len(str(k))
-        atom_len = len(str(atomic_info[0]))
-        ep_len = len(str(atomic_info[1]))
-        lgf_len = len(str(atomic_info[2]))
-
-        # Create padding for each element
-        w_a_s = ' ' * (10 - atom_len)
-        a_e_s = ' ' * (10 - ep_len)
-        e_g_s = ' ' * (10 - lgf_len)
-
-        # Write to a string: wavelength, atmoic_number.ionization state, ep, loggf
-        string = str(k) + w_a_s + str(atomic_info[0]) + a_e_s + str(atomic_info[1]) + e_g_s + str(atomic_info[2]) \
-                 + ' \n'  # The last part ' \n' must be formatted exactly this way or else the moogparams file wont format right
-
-        # ----------------- Add information to the new lists
-        if include_uls:
-            if all_uls:
-                upper_limit = 1
-            moog_pars = str(best_info[0]) + \
-                        '  ' + str(best_info[1]) + \
-                        '  ' + str(round(best_info[2], 3)) + \
-                        '  ' + str(round(best_info[3], 3)) + \
-                        '  ' + str(round(best_info[4], 3)) + \
-                        '  ' + str(round(best_info[5], 3)) + \
-                        '  ' + str(upper_limit) + ' \n'
-
-            moog_params += [string[:-1] + moog_pars]
-            new_list += [string]  # Add to the new line list
-
-        else:
-            # Select only the lines which are not upper-limit measurements
-            if (upper_limit == 0) & (ab_err != 999.9):
-                moog_pars = str(best_info[0]) + \
-                            '  ' + str(best_info[1]) + \
-                            '  ' + str(round(best_info[2], 3)) + \
-                            '  ' + str(round(best_info[3], 3)) + \
-                            '  ' + str(round(best_info[4], 3)) + \
-                            '  ' + str(round(best_info[5], 3)) + \
-                            '  ' + str(upper_limit) + ' \n'
-
-                moog_params += [string[:-1] + moog_pars]
-                new_list += [string]  # Add to the new line list
-
-    # ----------------- Save information
-    if len(moog_params) == 0:
-        print(
-            'Oh no! No good lines were found in your linelist (maybe all upper limits?) Try setting include_uls=True.')
-
-    else:
-        print(new_list)
-        new_list[-1] = new_list[-1][:-1]
-        moog_params[-1] = moog_params[-1][:-1]
-
-        # Write the final linelist
-        with open(new_list_name, 'w') as f:
-            print('Writing file to ' + new_list_name)
-            f.writelines(new_list)
-
-        # Write the final MOOG info
-        with open(new_moog_params, 'w') as f:
-            print('Writing file to ' + new_moog_params)
-            f.writelines(moog_params)
 
 
 # -----------------------------------------------------------------------------------------------------------------------

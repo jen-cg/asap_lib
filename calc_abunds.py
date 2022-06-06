@@ -20,8 +20,8 @@ Calculate Abundances
 
 # -----------------------------------------------------------------------------------------------------------------------
 # Convert [X/Fe] to A(X)
-def xfe_2_AX(xfe, feh, AX_sol):
-    logXH_sol = AX_sol - 12.
+def xfe_2_AX(xfe, feh, AXx_sol):
+    logXH_sol = AXx_sol - 12.
 
     logXH_star = xfe + feh + logXH_sol
 
@@ -32,8 +32,8 @@ def xfe_2_AX(xfe, feh, AX_sol):
 
 # -----------------------------------------------------------------------------------------------------------------------
 # Convert A(X) to [X/Fe]
-def AX_2_xfe(AX, feh, AX_sol):
-    logXH_sol = AX_sol - 12.
+def AX_2_xfe(AX, feh, AXx_sol):
+    logXH_sol = AXx_sol - 12.
 
     logXH_star = AX - 12.
 
@@ -49,9 +49,10 @@ def calc_abunds(moog_lines_pars, species, include_uls=False, absolute=False):
 
     :param moog_lines_pars: (string) Name of / path to the file containing the moog line parameters
     :param species: (list / tuple)  [atmic_number.ionization state, 'name']  ie [26.0, 'Fe I']
-    :param include_uls: (True/False) Include upper limits in the abundance calculation ?
+    :param include_uls: (True/False) Include upper limits in the abundance calculation?
     :param absolute: (True/False) Return abundances in absolute form?
-    :return:
+
+    :return: abundance, abundance error, number  of lines used
     """
 
     # ----------------- Read in the MOOG pars
@@ -292,8 +293,7 @@ def calc_XFe(other_moog_lines_pars, fe_moog_lines_pars, include_uls=False, print
     return outs
 
 # -----------------------------------------------------------------------------------------------------------------------
-def calc_blends_abunds(final_blends_mlps, include_uls=False,
-                       absolute=False):
+def calc_blends_abunds(final_blends_mlps, include_uls=False, absolute=False):
     # JG: This is the same elem_dict that is in the constants file but without entries for CoI and CoII for unknown reasons
     # elem_dict = {
     #     3.0: 'Li I',
@@ -360,7 +360,6 @@ def calc_blends_abunds(final_blends_mlps, include_uls=False,
     long_name = elem_dict[species[0]]
     ax_sol = AX_sol[long_name]
 
-    waves = np.asarray(waves)
     abund_errs = np.asarray(abund_errs)
     abs_abunds = np.asarray(abs_abunds)
     ref_ms = np.asarray(ref_ms)

@@ -538,7 +538,7 @@ def spec_stack(spectra, name, occurs=None, spath=None, combpath=None, print_prog
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def spec_chop(wave, flux, elems):
+def spec_chop(wave, flux, elems_list):
     """
     Chop a spectrum into sections around specific spectral lines
 
@@ -551,7 +551,7 @@ def spec_chop(wave, flux, elems):
     waves = []
     fluxes = []
 
-    for e in elems:
+    for e in elems_list:
 
         # ----------------- Magnesium b lines: 5167A, 5172A, 5183A
         if e == 'Mg':
@@ -907,7 +907,7 @@ def rvcor(spectra,
           synth_spec,
           synth_path,
           names,
-          elems='all',
+          rv_elems='all',
           manual_rv=None,
           save_out_spec=True,
           out_path=None,
@@ -940,7 +940,7 @@ def rvcor(spectra,
 
     names: Names of the objects corresponding to the spectra
 
-    elems: Elements to do the radial velocity corrections with
+    rv_elems: Elements to do the radial velocity corrections with
     """
 
     if out_path is None:
@@ -949,8 +949,8 @@ def rvcor(spectra,
     if save_plot_path is None:
         save_plot_path = obs_path
 
-    if elems == 'all':
-        elems = ['Mg', 'Na', 'Ca', 'Ha', 'Hb']
+    if rv_elems == 'all':
+        rv_elems = ['Mg', 'Na', 'Ca', 'Ha', 'Hb']
 
     # ----------------- Read in synthetic spectra
     # (Assumes synthetic spectrum must be in a fits file )
@@ -980,14 +980,14 @@ def rvcor(spectra,
 
         - s_waves is an array with a certain number of sub arrays (= to the number of elements chosen).  Each 
         sub-array corresponds to the spectrum chopped around an element. '''
-    s_waves, s_fluxes = spec_chop(s_wave, s_flux, elems)
+    s_waves, s_fluxes = spec_chop(s_wave, s_flux, rv_elems)
 
     # ----------------- Plot the synthetic (reference) spectra
     if plot_synth is True:
         plt.figure(figsize=(8, 5))
         plt.plot(s_wave, s_flux, color='tab:orange', linewidth=0.5, label='Synthetic')
         for i in range(len(s_waves)):
-            plt.plot(s_waves[i], s_fluxes[i], linewidth=0.5, label=elems[i])
+            plt.plot(s_waves[i], s_fluxes[i], linewidth=0.5, label=rv_elems[i])
         plt.legend()
         plt.xlabel(r'Wavelength ($\AA$)')
         plt.ylabel('Normalized Flux')
@@ -1025,20 +1025,20 @@ def rvcor(spectra,
 
         - waves is an array with a certain number of sub arrays (= to the number of elements chosen).  Each sub-array 
         corresponds to the spectrum chopped around an element. '''
-        waves, fluxes = spec_chop(wave, flux, elems)
+        waves, fluxes = spec_chop(wave, flux, rv_elems)
 
         # ----------------- Print information about the (observed) spectrum:
         if print_spec_info is True:
             print(names[n])
             for i in range(len(waves)):
-                print('Length of %s obs spec: ' % elems[i], len(fluxes[i]))
-                print('Length of %s obs wave: ' % elems[i], len(waves[i]))
-                print('%s obs start: ' % elems[i], np.min(waves[i]))
-                print('%s obs end: ' % elems[i], np.max(waves[i]))
-                print('Length of %s synth spec: ' % elems[i], len(s_fluxes[i]))
-                print('Length of %s synth wave: ' % elems[i], len(s_waves[i]))
-                print('Synth %s start: ' % elems[i], np.min(s_waves[i]))
-                print('Synth %s end: ' % elems[i], np.max(s_waves[i]))
+                print('Length of %s obs spec: ' % rv_elems[i], len(fluxes[i]))
+                print('Length of %s obs wave: ' % rv_elems[i], len(waves[i]))
+                print('%s obs start: ' % rv_elems[i], np.min(waves[i]))
+                print('%s obs end: ' % rv_elems[i], np.max(waves[i]))
+                print('Length of %s synth spec: ' % rv_elems[i], len(s_fluxes[i]))
+                print('Length of %s synth wave: ' % rv_elems[i], len(s_waves[i]))
+                print('Synth %s start: ' % rv_elems[i], np.min(s_waves[i]))
+                print('Synth %s end: ' % rv_elems[i], np.max(s_waves[i]))
                 print('---')
         # -----------------
 
@@ -1047,7 +1047,7 @@ def rvcor(spectra,
             plt.figure(figsize=(8, 5))
             plt.plot(wave, flux, color='k', linewidth=0.5, label=names[n])
             for i in range(len(waves)):
-                plt.plot(waves[i], fluxes[i], linewidth=0.5, label=elems[i])
+                plt.plot(waves[i], fluxes[i], linewidth=0.5, label=rv_elems[i])
             plt.legend()
             plt.xlabel(r'Wavelength ($\AA$)')
             plt.ylabel('Normalized Flux')
@@ -1062,29 +1062,29 @@ def rvcor(spectra,
                 plt.figure(figsize=(8, 5))
                 plt.plot(waves[i], fluxes[i], color='k', linewidth=0.5, label=names[n])
                 plt.plot(s_waves[i], s_fluxes[i], color='tab:orange', linewidth=0.5, label='Template')
-                if elems[i] == 'Mg':
+                if rv_elems[i] == 'Mg':
                     plt.xlim(5050, 5300)
-                if elems[i] == 'Na':
+                if rv_elems[i] == 'Na':
                     plt.xlim(5800, 5990)
-                if elems[i] == 'Ca':
+                if rv_elems[i] == 'Ca':
                     plt.xlim(8400, 8750)
-                if elems[i] == 'Ha':
+                if rv_elems[i] == 'Ha':
                     plt.xlim(6520, 6600)
-                if elems[i] == 'Hb':
+                if rv_elems[i] == 'Hb':
                     plt.xlim(4820, 4900)
 
-                if elems[i] == 'Mg_Tell':
+                if rv_elems[i] == 'Mg_Tell':
                     plt.xlim(4420, 4500)
-                if elems[i] == 'O_Tell':
+                if rv_elems[i] == 'O_Tell':
                     plt.xlim(7750, 7800)
 
                 plt.legend()
                 plt.xlabel(r'Wavelength ($\AA$)')
                 plt.ylabel('Normalized Flux')
-                plt.title('plot_regions=True\nGRACES %s lines: %s' % (elems[i], names[n]))
+                plt.title('plot_regions=True\nGRACES %s lines: %s' % (rv_elems[i], names[n]))
                 plt.show()
                 if save_plot is True:
-                    plt.savefig(save_plot_path + '%s_%s_lines.eps' % (names[n], elems[i]), format='eps')
+                    plt.savefig(save_plot_path + '%s_%s_lines.eps' % (names[n], rv_elems[i]), format='eps')
 
         # ----------------- Automatic rv correction
         ''' If  manual_rv is not selected, then do an automatic rv correction
@@ -1111,8 +1111,8 @@ def rvcor(spectra,
         # ----------------- Print information
         if print_info is True:
             if manual_rv is None:
-                for i in range(len(elems)):
-                    print('Velocity from %s lines: ' % elems[i], vels[i])
+                for i in range(len(rv_elems)):
+                    print('Velocity from %s lines: ' % rv_elems[i], vels[i])
             else:
                 print('By hand velocity from Mg lines: ', vels[0])
                 print('By hand velocity from Na lines: ', vels[1])
@@ -1183,8 +1183,8 @@ def rvcor(spectra,
     # -----------------
     if save_rv_info is True:
         best_vs = -1 * np.array(best_vs)
-        colheads = ['name', 'mean_v', 'mean_v_err'] + [elems[i] for i in range(len(elems))]
-        tab = [names, best_vs, best_vs_err] + [[vels[i]] for i in range(len(elems))]
+        colheads = ['name', 'mean_v', 'mean_v_err'] + [rv_elems[i] for i in range(len(rv_elems))]
+        tab = [names, best_vs, best_vs_err] + [[vels[i]] for i in range(len(rv_elems))]
 
         table = Table(tab, names=colheads)
         # ascii.write(table,'GRACESRVs.txt')

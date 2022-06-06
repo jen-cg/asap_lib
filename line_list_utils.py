@@ -268,6 +268,102 @@ def trim_linelist_2_spectrum(spectrum, line_list, ftype='xy', saveName=None):
 
 
 # -----------------------------------------------------------------------------------------------------------------------
+def trim_2_good_list(line_dict, new_list_name, new_moog_params, include_uls=False, all_uls=False):
+    """
+    Create a list of good lines from a dictionary
+
+    :param line_dict:  (dict) A dictionary of line information.  Must include information about the best fit
+    :param new_list_name: (string) Name of / path to the new line list
+    :param new_moog_params: (string) Name of / path to the
+    :param include_uls: (True/False)
+    :param all_uls: (True/False)
+
+
+    """
+
+    # ----------------- Extract relevant sections of the dictionary
+    keys = line_dict.keys()
+    lines = []
+    for k in keys:
+        if k != 'Atmosphere':
+            lines.append(k)
+
+    # ----------------- For each line in the dictionary:
+    new_list = ['# \n']  # An empty list for the new line list
+    moog_params = []  # An empty list for  the moog parameters file
+    for i, k in enumerate(lines):
+
+        # Extract information about the line:
+        best_info = line_dict[k]['Best']
+        ab_err = best_info[2]
+        atomic_info = line_dict[k]['Atomic Info']
+        ul_info = line_dict[k]['Upper Limit Info']
+        upper_limit = int(ul_info[-1])
+
+        # Get the size of each element
+        atom_len = len(str(atomic_info[0]))
+        ep_len = len(str(atomic_info[1]))
+        lgf_len = len(str(atomic_info[2]))
+
+        # Create padding for each element
+        w_a_s = ' ' * (10 - atom_len)
+        a_e_s = ' ' * (10 - ep_len)
+        e_g_s = ' ' * (10 - lgf_len)
+
+        # Write to a string: wavelength, atmoic_number.ionization state, ep, loggf
+        string = str(k) + w_a_s + str(atomic_info[0]) + a_e_s + str(atomic_info[1]) + e_g_s + str(atomic_info[2]) \
+                 + ' \n'
+
+        # ----------------- Add information to the new lists
+        if include_uls:
+            if all_uls:
+                upper_limit = 1
+            moog_pars = str(best_info[0]) + \
+                        '  ' + str(best_info[1]) + \
+                        '  ' + str(round(best_info[2], 3)) + \
+                        '  ' + str(round(best_info[3], 3)) + \
+                        '  ' + str(round(best_info[4], 3)) + \
+                        '  ' + str(round(best_info[5], 3)) + \
+                        '  ' + str(upper_limit) + ' \n'
+
+            moog_params += [string[:-1] + moog_pars]
+            new_list += [string]  # Add to the new line list
+
+        else:
+            # Select only the lines which are not upper-limit measurements
+            if (upper_limit == 0) & (ab_err != 999.9):
+                moog_pars = str(best_info[0]) + \
+                            '  ' + str(best_info[1]) + \
+                            '  ' + str(round(best_info[2], 3)) + \
+                            '  ' + str(round(best_info[3], 3)) + \
+                            '  ' + str(round(best_info[4], 3)) + \
+                            '  ' + str(round(best_info[5], 3)) + \
+                            '  ' + str(upper_limit) + ' \n'
+
+                moog_params += [string[:-1] + moog_pars]
+                new_list += [string]  # Add to the new line list
+
+    # ----------------- Save information
+    if len(moog_params) == 0:
+        print(
+            'Oh no! No good lines were found in your linelist (maybe all upper limits?) Try setting include_uls=True.')
+
+    else:
+        new_list[-1] = new_list[-1][:-1]
+        moog_params[-1] = moog_params[-1][:-1]
+
+        # Write the final linelist
+        with open(new_list_name, 'w') as f:
+            print('Writing file to ' + new_list_name)
+            f.writelines(new_list)
+
+        # Write the final MOOG info
+        with open(new_moog_params, 'w') as f:
+            print('Writing file to ' + new_moog_params)
+            f.writelines(moog_params)
+
+
+# -----------------------------------------------------------------------------------------------------------------------
 def ref_wave_from_linelist(linelist):
     split = linelist.split('_')
     ref_wave = float(split[-1].split('.txt')[0])

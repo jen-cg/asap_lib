@@ -37,7 +37,7 @@ def no_or_yes(question):
         if 'n' in reply:
             return True
         else:
-            err = err + 1
+            err += 1
             print("Sorry, didn't catch that... ")
     if err >= 3:
         sys.exit('Three strikes and you are out: Did not understand input')
@@ -56,7 +56,7 @@ def fe_or_abs(question):
         if 'a' in reply:
             return False
         else:
-            err = err + 1
+            err += 1
             print("Sorry, didn't catch that... ")
     if err >= 3:
         sys.exit('Three strikes and you are out: Did not understand abundance type')
@@ -75,7 +75,6 @@ def int_par_check(question, to_list):
             return to_list
         except:
             print('Sorry, I do not recognize your input, try again ')
-            err = err + 1
+            err += 1
         if err > 3:
-            again = False
             sys.exit('Three strikes and you are out! Careful with your input.')

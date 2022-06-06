@@ -97,7 +97,6 @@ plane_parallel_model_atm_path = '/arc5/home/jglover/GRACES/Code/MARCS/grids/stan
 ###################################
 '''
 default_vmicro = 1.8
-# -----------------------------------------------------------------------------------------------------------------------
 
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -415,9 +414,11 @@ def which_grid():
 
     if ref_logg <= 3.5:
         grid = spherical_model_atm_path
+        print('-'+grid)
 
     else:
         grid = plane_parallel_model_atm_path
+        print('-'+grid)
 
     return grid
 
@@ -435,15 +436,15 @@ def mod_params_atoms(pristine_name,
     """
     Generate a file with the model atmosphere parameters
 
-    :param pristine_name:
-    :param parameters:
+    :param pristine_name: name of the star
+    :param parameters: stellar parameters [Teff, logg, [Fe/H] ]
     :param plus_minus:
-    :param T:
-    :param L:
-    :param M:
-    :param V:
-    :param single:
-    :param print_params:
+    :param T: True/False
+    :param L: True/False
+    :param M: True/False
+    :param V: True/False
+    :param single: True/False
+    :param print_params: True/False
     :return:
     """
 
@@ -470,12 +471,14 @@ def mod_params_atoms(pristine_name,
 
     # ----------------- Microturbulence
     try:
+        # If a microturbulence is given do the following:
         vmicro = round(parameters[3], 2)
         if vmicro < 0.0:
             vmicro = 0.1
         if vmicro > 5.0:
             vmicro = 5.0
     except:
+        # If a microturbulence is not given, calculate as follows:
         # vmicro = 1.163 + (7.808E-4 * (teff - 5800)) - (0.494 * (logg - 4.3)) - (0.050 * met)
         vmicro = 0.14 - (0.08 * met) + (4.90 * (teff / 10. ** 4)) - (0.47 * logg)
         vmicro = round(vmicro, 2)
@@ -484,7 +487,7 @@ def mod_params_atoms(pristine_name,
     params = []
     string1 = ['%s %s %s %s %s \n' % (teff, round(logg, 2), met, vmicro, pristine_name)]
 
-    # -----------------
+    # ----------------- If T == True, find the high and low Teff
     if T:
         thi = round(teff + plus_minus)
         tlo = round(teff - plus_minus)
@@ -499,7 +502,7 @@ def mod_params_atoms(pristine_name,
         string3 = ['%s %s %s %s %s' % (tlo, round(logg, 2),
                                        met, vmicro, pristine_name + '_tlo')]
 
-    # -----------------
+    # ----------------- If L == True, find the high and low Log g
     if L:
 
         lghi = round(logg + plus_minus, 2)
@@ -521,7 +524,7 @@ def mod_params_atoms(pristine_name,
         string3 = ['%s %s %s %s %s' % (teff, lglo,
                                        met, vmicro, pristine_name + '_lglo')]
 
-    # -----------------
+    # ----------------- If M == True, find the high and low metallicity
     if M:
         mhi = met + plus_minus
         mlo = met - plus_minus
@@ -536,7 +539,7 @@ def mod_params_atoms(pristine_name,
         string3 = ['%s %s %s %s %s' % (teff, round(logg, 2),
                                        mlo, vmicro, pristine_name + '_mlo')]
 
-    # -----------------
+    # ----------------- If V == True, find the high and low microturbulence
     if V:
         vhi = round(vmicro + plus_minus, 2)
         vlo = round(vmicro - plus_minus, 2)
@@ -551,19 +554,22 @@ def mod_params_atoms(pristine_name,
         string3 = ['%s %s %s %s %s' % (teff, round(logg, 2),
                                        met, vlo, pristine_name + '_vlo')]
 
-    # -----------------
+    # ----------------- If single == True,
     if single:
         params += [string1[0][:-2]]
     else:
         params = params + string1 + string2 + string3
 
-    # -----------------
+    # ----------------- If True, print parameters
+    if print_params:
+        print('-The model atmosphere parameters are: \n{}'.format(params))
+
+    # ----------------- Write parameters file
     with open('params.txt', 'w') as file:
         file.writelines(params)
+        print('-Saving model atmosphere parameters to: params.txt ')
 
-    if print_params:
-        print(params)
-
+    # ----------------- Write atoms file
     atoms = ['logFe\n']
     if single:
         atoms.append('8.0 0.4 12.0 0.4 14.0 0.4 16.0 0.4 20.0 0.4 22.0 0.4')
@@ -574,6 +580,7 @@ def mod_params_atoms(pristine_name,
 
     with open('atoms.txt', 'w') as file:
         file.writelines(atoms)
+        print('-Saving atoms to: atoms.txt')
 
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -587,25 +594,33 @@ def gen_mod_atm(name, params, working_path, print_params=False):
     :param print_params: True/False
     :return:
     """
+    print('-----------------------------------------------------------------')
+    print('----------------- Generating a Model Atmosphere -----------------')
+    print('-----------------------------------------------------------------\n')
 
     # ----------------- Generate a text file with the parameters to use in the model atmosphere
+    print('----------------- Finding model atmosphere parameters:')
     mod_params_atoms(name,
                      params,
                      100.,
                      single=True,
                      print_params=print_params)
+    print('\n')
 
     # ----------------- Decide which group of model atmospheres to choose based on the logg coverage
+    print('----------------- Finding which group of model atmosphere grids to use based on the log g coverage:')
     grid = which_grid()
+    print('\n')
 
     # ----------------- Run the auto atmosphere
+    print('----------------- Creating the model atmospheres:')
     auto_atmosphere(paramstxt=True,
-                       atomstxt=True,
-                       modelpath=True,
-                       model_path=grid,
-                       outpath=True,
-                       out_path=working_path,
-                       out_type='name')
+                    atomstxt=True,
+                    modelpath=True,
+                    model_path=grid,
+                    outpath=True,
+                    out_path=working_path,
+                    out_type='name')
 
     # ----------------- Cleanup the .alt files (delete them)
     all_files = os.listdir()
@@ -633,7 +648,7 @@ def auto_atmosphere(paramstxt=False,
     :param model_path: string.  Full path to the model atmosphere grids
     :param outpath: True/False. Do you have the full path to the
     :param out_path: string.  Full path to the model atmosphere grids
-    :param out_type:
+    :param out_type: (string, 'params' or 'name') How do you want to name the output model atmosphere?
     :param inter_grid: True/False.
     :param inter_atoms: True/False.
     :return:
@@ -811,14 +826,14 @@ def auto_atmosphere(paramstxt=False,
         if a_type == 'logFe':
             for i, a in enumerate(atoms):
                 for j, n in enumerate(a):
-                    AX_sol = 0
+                    AXx_sol = 0
                     found = False
                     for e in elems:
                         if elems[e][0] == n:
-                            AX_sol = elems[e][1]
+                            AXx_sol = elems[e][1]
                             found = True
                     if found:
-                        abund = xfe_2_AX(abundances[i][j], mets[i], AX_sol)
+                        abund = xfe_2_AX(abundances[i][j], mets[i], AXx_sol)
                         abundances[i][j] = round(abund, 2)
                     else:
                         print('\t-Could not find element in my library.')
@@ -1139,10 +1154,10 @@ def auto_atmosphere(paramstxt=False,
                         for e in elems:
                             if elems[e][0] == elem:
                                 ename = e
-                                AX_sol = elems[e][1]
+                                AXx_sol = elems[e][1]
                                 found = True
                         if found:
-                            abundance = round(xfe_2_AX(abund, met, AX_sol), 2)
+                            abundance = round(xfe_2_AX(abund, met, AXx_sol), 2)
 
                             if exid:
                                 atoms[i][existing_ind] = elem
@@ -1168,10 +1183,10 @@ def auto_atmosphere(paramstxt=False,
                         for e in elems:
                             if elems[e][0] == elem:
                                 ename = e
-                                AX_sol = elems[e][1]
+                                AXx_sol = elems[e][1]
                                 found = True
                         if found:
-                            log_ab = round(AX_2_xfe(abund, met, AX_sol), 2)
+                            log_ab = round(AX_2_xfe(abund, met, AXx_sol), 2)
 
                             if exid:
                                 atoms[i][existing_ind] = elem

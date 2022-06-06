@@ -138,7 +138,7 @@ def bin2xy(spectra, spaths, xypaths, xytype=None):
 
     # -----------------  Examine each spectrum
     for i, s in enumerate(spectra):
-        wave, flux, err = read_spec(os.path.join(spaths[i],s), ftype='bin')
+        wave, flux, err = read_spec(os.path.join(spaths[i], s), ftype='bin')
 
         # name = s.split('.')[0]
         name = s.split('.comb')[0]
