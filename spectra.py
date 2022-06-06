@@ -856,11 +856,11 @@ def pyfxcor(wave, flux, s_wave, s_flux, v_tol=5.0, print_vel=False, plot_shift=F
         plt.ylabel('Normalized Flux')
         plt.show()
 
-        # ----------------- Return
-        if return_corr_wave:
-            return corr_wave, vel
-        else:
-            return vel
+    # ----------------- Return
+    if return_corr_wave:
+        return corr_wave, vel
+    else:
+        return vel
 
 # -----------------------------------------------------------------------------------------------------------------------
 def doppler_corr(waves, fluxes, s_waves, s_fluxes, plot_shift=False):
