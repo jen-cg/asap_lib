@@ -261,9 +261,50 @@ def trim_linelist_2_spectrum(spectrum, line_list, ftype='xy', saveName=None):
     # ----------------- Save updated line list
     if saveName is None:
         with open(line_list, 'w') as f:
+            print('Saving trimmed line list to '+line_list)
             f.writelines(trimmed_list)
     else:
         with open(saveName, 'w') as f:
+            print('Saving trimmed line list to ' + saveName)
+            f.writelines(trimmed_list)
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def trim_lines_from_list(line_list, remove_lines, saveName=None):
+    """
+
+    :param line_list: (string) Path to the list where each line has the format: "wave ....."
+    :param remove_lines: (list of floats) List of wavelengths of the lines to remove from the list
+    :param saveName: (None or string) If None, save the trimmed line list under the original name, or else specify the
+    name of the trimmed line list
+
+    """
+    # ----------------- Read in the line list
+    with open(line_list, 'r') as f:
+        lines = f.readlines()
+
+    # ----------------- Extract the information from each line
+    trimmed_list = ['#\n']
+    for i, l in enumerate(lines):
+        split = l.split()
+        try:
+            lw = float(split[0])
+            if lw not in remove_lines:
+                trimmed_list.append(l)
+        except:
+            pass
+
+    # ----------------- Remove newline character from the last line of the file
+    trimmed_list[-1] = trimmed_list[-1].strip('\n')
+
+    # ----------------- Save updated line list
+    if saveName is None:
+        with open(line_list, 'w') as f:
+            print('Saving trimmed line list to ' + line_list)
+            f.writelines(trimmed_list)
+    else:
+        with open(saveName, 'w') as f:
+            print('Saving trimmed line list to ' + saveName)
             f.writelines(trimmed_list)
 
 
