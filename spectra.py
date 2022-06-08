@@ -862,6 +862,7 @@ def pyfxcor(wave, flux, s_wave, s_flux, v_tol=5.0, print_vel=False, plot_shift=F
     else:
         return vel
 
+
 # -----------------------------------------------------------------------------------------------------------------------
 def doppler_corr(waves, fluxes, s_waves, s_fluxes, plot_shift=False):
     """

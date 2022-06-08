@@ -32,14 +32,19 @@ AX_sol = {
 # -----------------------------------------------------------------------------------------------------------------------
 # Dictionary to match atomic number with species - may need to add more based on the lines you are interested in
 elem_dict = {
-    3.0: 'Li I',
-    6.0: 'C I', 7.0: 'N I', 8.0: 'O I',
-    11.0: 'Na I', 12.0: 'Mg I', 13.0: 'Al I',
-    14.0: 'Si I', 16.0: 'S I',
+    3.0:  'Li I',
+    6.0:  'C I',
+    7.0:  'N I',
+    8.0:  'O I',
+    11.0: 'Na I',
+    12.0: 'Mg I',
+    13.0: 'Al I',
+    14.0: 'Si I',
+    16.0: 'S I',
     20.0: 'Ca I', 20.1: 'Ca II',
     21.0: 'Sc I', 21.1: 'Sc II',
     22.0: 'Ti I', 22.1: 'Ti II',
-    23.0: 'V I', 23.1: 'V II',
+    23.0: 'V I',  23.1: 'V II',
     24.0: 'Cr I', 24.1: 'Cr II',
     25.0: 'Mn I', 25.1: 'Mn II',
     26.0: 'Fe I', 26.1: 'Fe II',
@@ -47,10 +52,17 @@ elem_dict = {
     28.0: 'Ni I', 28.1: 'Ni II',
     29.0: 'Cu I', 29.1: 'Cu II',
     30.0: 'Zn I',
-    38.1: 'Sr II', 39.1: 'Y II',
+    38.1: 'Sr II',
+    39.1: 'Y II',
     40.0: 'Zr I', 40.1: 'Zr II',
-    56.1: 'Ba II', 57.1: 'La II',
-    60.1: 'Nd II', 63.1: 'Eu II', 82.0: 'Pb I'}
+    56.1: 'Ba II',
+    57.1: 'La II',
+    60.1: 'Nd II',
+    63.1: 'Eu II',
+    72.1: 'Hf II',
+    77.0: 'Ir I',
+    82.0: 'Pb I',
+    90.1: 'Th II'}
 
 # -----------------------------------------------------------------------------------------------------------------------
 # Elemental Information: Line format: 'Symbol: [Z, Solar Abundance, Solar Abund. Err]
