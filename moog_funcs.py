@@ -649,10 +649,11 @@ def find_continuum2(wave, flux, sigma_lower, sigma_upper):
     :return: clipped wavelength and flux arrays
     (Points with flux outside the specified sigma limits have been removed)
     """
+
     sol = sigma_clip(flux, sigma_lower=sigma_lower, sigma_upper=sigma_upper, maxiters=None)
 
-    clip_flux = [flux[i] for i in range(len(sol.mask)) if sol.mask[i] is False]
-    clip_wave = [wave[i] for i in range(len(sol.mask)) if sol.mask[i] is False]
+    clip_flux = [flux[i] for i in range(len(sol.mask)) if sol.mask[i] == False]
+    clip_wave = [wave[i] for i in range(len(sol.mask)) if sol.mask[i] == False]
 
     # ---------------- Return the continuum wavelengths and fluxes
     return clip_wave, clip_flux
