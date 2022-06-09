@@ -20,6 +20,7 @@ import time
 import subprocess
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
+from astropy.stats import sigma_clip
 
 # ----------------- Import the other files of functions
 module_path = os.path.abspath(os.path.join('..'))
@@ -29,8 +30,6 @@ if module_path not in sys.path:
 from functions.handleSpectra import *
 from functions.spectra import pyfxcor
 from functions.line_list_utils import *
-
-
 
 # Command line call for your version of MOOGSILENT. Might just be 'MOOGSILENT'.
 # Could also be something like '/usr/local/moognov19/MOOGSILENT'
@@ -549,14 +548,16 @@ def parse_moog_out(moog_outs):
 
 # -----------------------------------------------------------------------------------------------------------------------
 def find_continuum(obswave,
-                  obsflux,
-                  linewaves,
-                  ref_wave=None,
-                  line_width=0.5,
-                  wave_range=5.0,
-                  trim_sigma=[2.0, 2.0],
-                  retrim=True):
+                   obsflux,
+                   linewaves,
+                   ref_wave=None,
+                   line_width=0.5,
+                   wave_range=5.0,
+                   trim_sigma=[2.0, 2.0],
+                   retrim=True):
     """
+    A function to identify the wavelengths and fluxes of the continuum near a spectral line.
+    This is the old / original version written by Colin Kielty
 
     :param obswave: (array) Wavelength array of the spectrum
 
@@ -636,6 +637,28 @@ def find_continuum(obswave,
 
 
 # -----------------------------------------------------------------------------------------------------------------------
+def find_continuum2(wave, flux, sigma_lower, sigma_upper):
+    """
+    A function to identify the wavelengths and fluxes of the continuum.
+    This is a newer version of the code which uses asymmetric sigma clipping
+
+    :param wave: (array) An array of wavelength values
+    :param flux: (array) An array of corresponding flux values
+    :param sigma_lower: (float) The lower sigma value
+    :param sigma_upper: (float) The upper sigma value
+    :return: clipped wavelength and flux arrays
+    (Points with flux outside the specified sigma limits have been removed)
+    """
+    sol = sigma_clip(flux, sigma_lower=sigma_lower, sigma_upper=sigma_upper, maxiters=None)
+
+    clip_flux = [flux[i] for i in range(len(sol.mask)) if sol.mask[i] is False]
+    clip_wave = [wave[i] for i in range(len(sol.mask)) if sol.mask[i] is False]
+
+    # ---------------- Return the continuum wavelengths and fluxes
+    return clip_wave, clip_flux
+
+
+# -----------------------------------------------------------------------------------------------------------------------
 def determine_uls(obswave,
                   obsflux,
                   linewaves,
@@ -681,8 +704,9 @@ def determine_uls(obswave,
     are_lines = isinstance(linewaves, (list, tuple, np.ndarray))
 
     # ---------------- Find the continuum
-    cont_wave, cont_flux = find_continuum(obswave, obsflux, linewaves, ref_wave=ref_wave, line_width=line_width,
-                                          wave_range=wave_range, trim_sigma=trim_sigma, retrim=retrim)
+    # cont_wave, cont_flux = find_continuum(obswave, obsflux, linewaves, ref_wave=ref_wave, line_width=line_width,
+    #                                       wave_range=wave_range, trim_sigma=trim_sigma, retrim=retrim)
+    cont_wave, cont_flux = find_continuum2(obswave, obsflux, trim_sigma[1], trim_sigma[0])
 
     # ---------------- Some metrics
     cont_flux_mean = np.nanmean(cont_flux)  # Mean flux value of the continuum
@@ -1227,8 +1251,8 @@ def moog_best_lines(spec_name,
         else:
             new_err = bests[2]
             abundances = [new_abund - new_err, new_abund, new_abund + new_err]
-            cs = ['r', 'b', 'r'] # Line colour
-            lsty = ['--', '-', '--'] #Line style
+            cs = ['r', 'b', 'r']  # Line colour
+            lsty = ['--', '-', '--']  # Line style
 
         # ----------------- For each smoothing term:
         for smog in smogs:
@@ -1961,5 +1985,3 @@ def moog_best_blend(spec_name, spectrum, line_dictionary, model_atm,
         print('Elapsed time: %s s' % round(t1 - t0))
 
     return line_dictionary
-
-
