@@ -548,17 +548,15 @@ def parse_moog_out(moog_outs):
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def determine_uls(obswave,
+def find_continuum(obswave,
                   obsflux,
                   linewaves,
                   ref_wave=None,
-                  ul_sigma=3.0,
                   line_width=0.5,
                   wave_range=5.0,
                   trim_sigma=[2.0, 2.0],
                   retrim=True):
     """
-    This function estimates line depth and determines if a line will be treated as an upper limit or not
 
     :param obswave: (array) Wavelength array of the spectrum
 
@@ -567,9 +565,6 @@ def determine_uls(obswave,
     :param linewaves: (list/array or float) Wavelength(s) of the spectral lines in question
 
     :param ref_wave:
-
-    :param ul_sigma: (float)  Upper limit sigma.  If the line depth is greater than ul_sigma times the continuum
-    standard deviation then upper_lim = False
 
     :param line_width: (float) Estimated width of the spectral line in wavelength units (angstroms)
 
@@ -581,12 +576,9 @@ def determine_uls(obswave,
     continuum.  An appropriate choice of trim_sigma will depend on the signal-to-noise of the spectrum
 
     :param retrim: (True/False) Attempt to trim additional lines from the continuum ?
-
-    :return: [diff, cont_flux_std, upper_lim]
-    - Diff is 1 - the mean continuum flux
-    - cont_flux_std is the standard deviation of the continuum flux
-    - upper_lim (bool) is 0 if the line depth is greater than the tolerance and is 1 otherwise
+    :return:
     """
+
     # ----------------  Check if we are fitting one line or many
     # True if many lines (list, tuple, np.ndarray), False if single line (float)
     are_lines = isinstance(linewaves, (list, tuple, np.ndarray))
@@ -637,6 +629,59 @@ def determine_uls(obswave,
         good = np.where((cont_flux <= upper_bound) & (cont_flux >= lower_bound))[0]
         cont_flux = cont_flux[good]
 
+    # ---------------- Return the continuum wavelengths and fluxes
+    return cont_wave, cont_flux
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def determine_uls(obswave,
+                  obsflux,
+                  linewaves,
+                  ref_wave=None,
+                  ul_sigma=3.0,
+                  line_width=0.5,
+                  wave_range=5.0,
+                  trim_sigma=[2.0, 2.0],
+                  retrim=True):
+    """
+    This function estimates line depth and determines if a line will be treated as an upper limit or not
+
+    :param obswave: (array) Wavelength array of the spectrum
+
+    :param obsflux: (array) Flux array corresponding to the wavelength array of the spectrum
+
+    :param linewaves: (list/array or float) Wavelength(s) of the spectral lines in question
+
+    :param ref_wave:
+
+    :param ul_sigma: (float)  Upper limit sigma.  If the line depth is greater than ul_sigma times the continuum
+    standard deviation then upper_lim = False
+
+    :param line_width: (float) Estimated width of the spectral line in wavelength units (angstroms)
+
+    :param wave_range: (float) In the case of a single line, width of window around the line. In the case of several
+    lines, width from the lines with the minimum and maximum wavelengths.  In units of wavelength (angstroms)
+
+    :param trim_sigma: [Upper bound, lower bound].  For use in attempting to remove additional lines when identifying
+    the continuum (retrim = True).  Keep only what is within [Upper bound, lower bound] sigma from the mean as the
+    continuum.  An appropriate choice of trim_sigma will depend on the signal-to-noise of the spectrum
+
+    :param retrim: (True/False) Attempt to trim additional lines from the continuum ?
+
+    :return: [diff, cont_flux_std, upper_lim]
+    - Diff is 1 - the mean continuum flux
+    - cont_flux_std is the standard deviation of the continuum flux
+    - upper_lim (bool) is 0 if the line depth is greater than the tolerance and is 1 otherwise
+    """
+
+    # ----------------  Check if we are fitting one line or many
+    # True if many lines (list, tuple, np.ndarray), False if single line (float)
+    are_lines = isinstance(linewaves, (list, tuple, np.ndarray))
+
+    # ---------------- Find the continuum
+    cont_wave, cont_flux = find_continuum(obswave, obsflux, linewaves, ref_wave=ref_wave, line_width=line_width,
+                                          wave_range=wave_range, trim_sigma=trim_sigma, retrim=retrim)
+
     # ---------------- Some metrics
     cont_flux_mean = np.nanmean(cont_flux)  # Mean flux value of the continuum
     cont_flux_std = np.nanstd(cont_flux)  # Standard deviation of the flux of the continuum
@@ -651,7 +696,7 @@ def determine_uls(obswave,
 
     # Extract the index of the spectrum that is closest and to the left of the line
     mindex = np.where(obsflux == obsflux[left_o_line][-1])[0][0]
-    # Search around this point for the minumum flux
+    # Search around this point for the minimum flux
     line_flux_min = np.min(obsflux[mindex - 2: mindex + 3])
     # Let the line depth be the estimated continuum minus this flux
     line_depth = cont_flux_mean - line_flux_min
