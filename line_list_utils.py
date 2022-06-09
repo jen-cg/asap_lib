@@ -410,3 +410,58 @@ def ref_wave_from_linelist(linelist):
     ref_wave = float(split[-1].split('.txt')[0])
 
     return ref_wave
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def reorder_linelist(line_list, saveName=None):
+    """
+    Reorder a line list such that the lines are in order of increasing wavelength.
+    This might be useful when writing new line lists.
+
+    :param line_list:  (string) Path to the line list where each line has the format: "wave atom ep lgf \n"
+    and the first line has the format "# \n"
+    :param saveName: (None or string) If None, save the re-ordered line list under the original name, or else specify
+    the name of the re-ordered line list
+
+    """
+
+    # ----------------- Read line list
+    lst = np.array(open(line_list).readlines())
+
+    # ----------------- Get wavelength of each line in the list
+    waves = []
+    for line in lst:
+        if line != '# \n':
+            waves.append(float(line.split()[0]))
+    waves = np.array(waves)
+
+    # ----------------- Sort the wavelengths in increasing order
+    new = waves.copy()
+    new.sort()
+
+    # ----------------- Get the indices of the original list in the new order
+    ind = [np.where(waves == n)[0][0] for n in new]
+
+    # ----------------- Reorder the original list (excluding the first line)
+    lst = np.array(lst[1:])
+    lst = list(lst[ind])
+
+    # ----------------- Make sure each line except the last ends in '\n'
+    for i in range(len(lst)):
+        if lst[i][-1] != '\n':
+            lst[i] += '\n'
+
+    lst[-1] = lst[-1].strip('\n')
+
+    # ----------------- Add back the first line
+    lst = ['# \n'] + lst
+
+    # ----------------- Save re-ordered line list
+    if saveName is None:
+        with open(line_list, 'w') as f:
+            print('Saving re-ordered list to ' + line_list)
+            f.writelines(lst)
+    else:
+        with open(saveName, 'w') as f:
+            print('Saving re-ordered list to ' + saveName)
+            f.writelines(lst)
