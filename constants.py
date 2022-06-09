@@ -7,7 +7,8 @@ s_o_l = constants.c / 1000.
 # -----------------------------------------------------------------------------------------------------------------------
 # Solar abundances and errs from Asplund 2009 - may need to add more based on the lines you are interested in
 """
-TODO: The listed abundances for carbon, nitrogen, oxygen do not match the values listed in asplund   
+TODO: The listed abundances for carbon, nitrogen, oxygen do not match the values listed in asplund 
+Note: Uranium abundance is from meteorites  
 """
 AX_sol = {
     'Li I':  [1.05, 0.10],
