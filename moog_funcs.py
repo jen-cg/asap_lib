@@ -627,7 +627,9 @@ def find_continuum(obswave,
         upper_bound = cont_flux_mean + (trim_sigma[0] * cont_flux_std)
         lower_bound = cont_flux_mean - (trim_sigma[1] * cont_flux_std)
         good = np.where((cont_flux <= upper_bound) & (cont_flux >= lower_bound))[0]
+
         cont_flux = cont_flux[good]
+        cont_wave = cont_wave[not_line]
 
     # ---------------- Return the continuum wavelengths and fluxes
     return cont_wave, cont_flux
