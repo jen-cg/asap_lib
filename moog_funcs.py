@@ -736,7 +736,7 @@ def determine_uls(obswave,
     else:
         upper_lim = 1
 
-    return [diff, cont_flux_std, upper_lim]
+    return [diff, cont_flux_std, cont_flux_mean, upper_lim]
 
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -749,6 +749,7 @@ def fit_line(abund_info,
              linedict,
              wave_range,
              diff,
+             cont_flux_mean,
              ref_wave=None,
              rv_corr=True,
              rv_tol=5.0,
@@ -768,6 +769,7 @@ def fit_line(abund_info,
     :param linedict: (dict) The line list you wish to analyze in the dictionary format of func. lines_2_dict
     :param wave_range: (float) pm_line
     :param diff: (float) The difference in the estimated continuum from 1
+    :param cont_flux_mean (float) The mean of the continuum flux
     :param ref_wave: (bool) 0 if not upper limit, 1 if upper limit
     :param rv_corr: (True/False) If True, correct the radial velocity
     :param rv_tol: (float) Radial velocity tolerance
@@ -835,7 +837,9 @@ def fit_line(abund_info,
     ioflux = interps(sswave)
 
     # ---------------- Calculate the Chi square residual between the observed and synthetic flux
-    r_mean = np.nansum(((ssflux - (ioflux + diff)) ** 2) / ssflux)
+    # Old:   r_mean = np.nansum(((ssflux - (ioflux + diff)) ** 2) / ssflux)
+
+    r_mean = np.nansum(((ssflux - (ioflux / cont_flux_mean )) ** 2) / ssflux)
 
     statistic = [abund, abs_abund, ref_m, rv, sdepth, r_mean]
 
@@ -1013,7 +1017,7 @@ def moog_looper(spec_name,
         pwave, pflux = read_spec(trim_spec, ftype='xy')
 
         # ----------------- Determine if the line is an upper limit
-        diff, pflux_std, upper_lim = determine_uls(pwave,
+        diff, pflux_std, pflux_mean, upper_lim = determine_uls(pwave,
                                                    pflux,
                                                    l,
                                                    ref_wave=None,
@@ -1073,6 +1077,7 @@ def moog_looper(spec_name,
                                                         line_dictionary,
                                                         pm_line,
                                                         diff,
+                                                        pflux_mean,
                                                         rv_corr=correct_rv,
                                                         rv_tol=rv_tolerance,
                                                         print_rv=False)
@@ -1218,7 +1223,7 @@ def moog_best_lines(spec_name,
         pwave, pflux = read_spec(trim_spec, ftype='xy')
 
         # ----------------- Determine if the line is an upper limit
-        diff, pflux_std, upper_lim = determine_uls(pwave,
+        diff, pflux_std, pflux_mean, upper_lim = determine_uls(pwave,
                                                    pflux,
                                                    l,
                                                    ref_wave=None,
@@ -1303,6 +1308,7 @@ def moog_best_lines(spec_name,
                                                         line_dictionary,
                                                         pm_line,
                                                         diff,
+                                                        pflux_mean,
                                                         rv_corr=correct_rv,
                                                         rv_tol=rv_tolerance,
                                                         print_rv=False)
@@ -1583,7 +1589,7 @@ def moog_blend_looper(spec_name, spectrum, line_dictionary, model_atm,
     pwave, pflux = read_spec(trim_spec, ftype='xy')
 
     # Determine if the line is an upper limit
-    diff, pflux_std, upper_lim = determine_uls(pwave, pflux, lwaves,
+    diff, pflux_std, pflux_mean, upper_lim = determine_uls(pwave, pflux, lwaves,
                                                ref_wave=ref_wave,
                                                ul_sigma=ul_sigma,
                                                line_width=line_width,
@@ -1639,14 +1645,19 @@ def moog_blend_looper(spec_name, spectrum, line_dictionary, model_atm,
 
         abund_info = [a, smog, abs_abund, ref_m]
 
-        line_dictionary, plot_stuffs = fit_line(abund_info, pwave, pflux,
-                                                swave, sflux,
-                                                lwaves, line_dictionary, pm_line,
-                                                diff,
-                                                ref_wave=ref_wave,
-                                                rv_corr=correct_rv,
-                                                rv_tol=rv_tolerance,
-                                                print_rv=False)
+        line_dictionary, plot_stuffs = fit_line(abund_info,
+                                                        pwave,
+                                                        pflux,
+                                                        swave,
+                                                        sflux,
+                                                        lwaves,
+                                                        line_dictionary,
+                                                        pm_line,
+                                                        diff,
+                                                        pflux_mean,
+                                                        rv_corr=correct_rv,
+                                                        rv_tol=rv_tolerance,
+                                                        print_rv=False)
 
         if plots:
             plt.plot(plot_stuffs[2], plot_stuffs[4] + diff, c='k')
@@ -1876,7 +1887,7 @@ def moog_best_blend(spec_name, spectrum, line_dictionary, model_atm,
     pwave, pflux = read_spec(trim_spec, ftype='xy')
 
     # Determine if the line is an upper limit
-    diff, pflux_std, upper_lim = determine_uls(pwave, pflux, lwaves,
+    diff, pflux_std, pflux_mean, upper_lim = determine_uls(pwave, pflux, lwaves,
                                                ref_wave=ref_wave,
                                                ul_sigma=ul_sigma,
                                                line_width=line_width,
@@ -1941,13 +1952,19 @@ def moog_best_blend(spec_name, spectrum, line_dictionary, model_atm,
 
         abund_info = [a, smog, abs_abund, ref_m]
 
-        line_dictionary, plot_stuffs = fit_line(abund_info, pwave, pflux,
-                                                swave, sflux,
-                                                lwaves, line_dictionary, pm_line,
-                                                diff,
-                                                ref_wave=ref_wave,
-                                                rv_corr=correct_rv, rv_tol=rv_tolerance,
-                                                print_rv=False)
+        line_dictionary, plot_stuffs = fit_line(abund_info,
+                                                        pwave,
+                                                        pflux,
+                                                        swave,
+                                                        sflux,
+                                                        lwaves,
+                                                        line_dictionary,
+                                                        pm_line,
+                                                        diff,
+                                                        pflux_mean,
+                                                        rv_corr=correct_rv,
+                                                        rv_tol=rv_tolerance,
+                                                        print_rv=False)
 
         if plots:
             # plot_stuffs = [oswave, osflux, sswave, ssflux, ioflux]
