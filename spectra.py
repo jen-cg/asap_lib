@@ -826,6 +826,7 @@ def pyfxcor(wave, flux, s_wave, s_flux, v_tol=5.0, print_vel=False, plot_shift=F
 
     # Let the rest wavelength be the mean of the synthetic wavelength array
     lam = np.median(t_s_w)
+    print(lam)
 
     # Get the velocity correction
     vel = s_o_l * (d_lam / lam)
@@ -888,7 +889,7 @@ def doppler_corr(waves, fluxes, s_waves, s_fluxes, plot_shift=False):
         vel = pyfxcor(waves[i], fluxes[i], s_waves[i], s_fluxes[i], v_tol=1e99, plot_shift=plot_shift)
         vels.append(vel)
 
-        # Calculate the difference between three velocities
+    # Calculate the difference between the velocities
     v_min = np.min(vels)
     v_max = np.max(vels)
 
@@ -1113,7 +1114,7 @@ def rvcor(spectra,
         if print_info is True:
             if manual_rv is None:
                 for i in range(len(rv_elems)):
-                    print('Velocity from %s lines: ' % rv_elems[i], vels[i])
+                    print('Velocity correction from %s lines: ' % rv_elems[i], vels[i])
             else:
                 print('By hand velocity from Mg lines: ', vels[0])
                 print('By hand velocity from Na lines: ', vels[1])
