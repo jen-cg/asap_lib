@@ -1055,9 +1055,6 @@ def moog_looper(spec_name,
                           atoms=added_atoms,
                           abunds=added_abunds)
 
-                # We can remove the single line list now - we're done  with it
-                os.remove('single_line.txt')
-
                 # ----------------- Run moog
                 run_moog()
 
@@ -1288,9 +1285,6 @@ def moog_best_lines(spec_name,
                           nsynth=1,
                           atoms=added_atoms,
                           abunds=added_abunds)
-
-                # We can remove the single line list now - we're done  with it
-                os.remove('single_line.txt')
 
                 # ----------------- Run moog
                 run_moog()
