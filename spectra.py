@@ -242,8 +242,8 @@ Input are:
 
     # ----------------- Save file of locations of the order overlaps
     if save_locs:
-        print('Saving locations of order overlaps to Standards_Olap_Info.npy')
-        np.save('Standards_Olap_Info.npy', np.array(olaps, dtype=object))
+        print('Saving locations of order overlaps to asap_lib/src/Standards_Olap_Info.npy')
+        np.save(os.path.join(os.getcwd(), 'src/Standards_Olap_Info.npy'), np.array(olaps, dtype=object))
 
 
 # -----------------------------------------------------------------------------------------------------------------------

@@ -1,7 +1,10 @@
 # ASAP: A Spectral Analysis Pipeline
 ## Driver Code
 
-Short Descriptions
+The .py functions in this folder are the primary driver functions of the entire "ASAP package"
+The files in src/ are re-written and modified during the various routines of the "ASAP package"
+
+Short Descriptions of Driver Functions
 --------------------
 constants.py
 - File with constants such as solar abundances, element dictionaries, and the speed of light
