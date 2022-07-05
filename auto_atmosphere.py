@@ -942,7 +942,7 @@ def auto_atmosphere(paramstxt=False,
         print('\n------- Rewriting interpol.com for star %s of %s: ' % (i + 1, len(params[0])))
 
         # ----------------- Open interpol.com, read the lines
-        with open('interpol.com', 'r') as file:
+        with open(os.path.join(os.getcwd(), 'asap_lib/src/interpol.com'), 'r') as file:
             # read a list of lines into data
             data = file.readlines()
 
@@ -985,13 +985,13 @@ def auto_atmosphere(paramstxt=False,
                     k += 1
 
         # ----------------- Write everything back into interpol.com
-        with open('interpol.com', 'w') as file:
+        with open(os.path.join( os.getcwd(), 'asap_lib/src/interpol.com'), 'w') as file:
             file.writelines(data)
 
         # -----------------------------------------------Run Interpol.com------------------------------------------
         print('\n------- Running interpol.com for star %s of %s: ' % (i + 1, len(params[0])))
         print('\n')
-        subprocess.call('./interpol.com')
+        subprocess.call(os.path.join(os.getcwd(), 'asap_lib/src/interpol.com'))
         # This produces an output file: ${Tref}g${loggref}z${zref}.alt
 
         # ---------------------------------------Reformat the atmosphere for moog---------------------------------------
