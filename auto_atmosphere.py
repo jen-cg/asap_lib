@@ -1016,7 +1016,7 @@ def auto_atmosphere(paramstxt=False,
             elif not name:
                 out_file_mmod = ofn[:-3] + 'mmod'
             else:
-                out_file_mmod = out_path + name + '.mmod'
+                out_file_mmod = name + '.mmod'
 
         # -----------------
         with open(out_file_alt, 'r') as file:
