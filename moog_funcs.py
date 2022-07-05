@@ -1040,7 +1040,7 @@ def moog_looper(spec_name,
                 added_abunds = [[a]]
 
                 # ----------------- Modify batch.par
-                mod_batch(os.path.join( os.getcwd(), 'asap_lib/src/batch.par'),
+                mod_batch('batch.par',
                           summary=spec_name + '.out',
                           smoothed=smo_out,
                           spectrum=trim_spec,
@@ -1271,7 +1271,7 @@ def moog_best_lines(spec_name,
                 added_abunds = [[a]]
 
                 # ----------------- Modify batch.par
-                mod_batch(os.path.join( os.getcwd(), 'asap_lib/src/batch.par'),
+                mod_batch('batch.par',
                           summary=spec_name + '.out',
                           smoothed=smo_out,
                           spectrum=trim_spec,
@@ -1612,7 +1612,7 @@ def moog_blend_looper(spec_name, spectrum, line_dictionary, model_atm,
                 added_abunds = added_abunds + [[o[i]]]
 
         # Modify batch.par
-        mod_batch(os.path.join( os.getcwd(), 'asap_lib/src/batch.par'),
+        mod_batch('batch.par',
                   summary=spec_name + '.out',
                   smoothed=smo_out,
                   spectrum=trim_spec,
@@ -1919,7 +1919,7 @@ def moog_best_blend(spec_name, spectrum, line_dictionary, model_atm,
         #        print(added_abunds)
 
         # Modify batch.par
-        mod_batch(os.path.join( os.getcwd(), 'asap_lib/src/batch.par'),
+        mod_batch('batch.par',
                   summary=spec_name + '.out',
                   smoothed=smo_out,
                   spectrum=trim_spec,
