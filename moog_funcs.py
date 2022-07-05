@@ -1272,7 +1272,7 @@ def moog_best_lines(spec_name,
 
                 # ----------------- Modify batch.par
                 mod_batch('batch.par',
-                          summary=spec_name + '.out',
+                          summary=os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.out'),
                           smoothed=smo_out,
                           spectrum=trim_spec,
                           model=model_atm,
