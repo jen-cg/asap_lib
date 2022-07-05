@@ -27,9 +27,9 @@ module_path = os.path.abspath(os.path.join('..'))
 if module_path not in sys.path:
     sys.path.append(module_path)
 
-from functions.handleSpectra import *
-from functions.spectra import pyfxcor
-from functions.line_list_utils import *
+from asap_lib.handleSpectra import *
+from asap_lib.spectra import pyfxcor
+from asap_lib.line_list_utils import *
 
 # Command line call for your version of MOOGSILENT. Might just be 'MOOGSILENT'.
 # Could also be something like '/usr/local/moognov19/MOOGSILENT'

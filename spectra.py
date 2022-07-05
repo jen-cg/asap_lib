@@ -13,8 +13,8 @@ module_path = os.path.abspath(os.path.join('..'))
 if module_path not in sys.path:
     sys.path.append(module_path)
 
-from functions.handleSpectra import *
-from functions.constants import *
+from asap_lib.handleSpectra import *
+from asap_lib.constants import *
 
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -1015,7 +1015,6 @@ def rvcor(spectra,
         print('Correcting ', names[n])
 
         # ----------------- Read in (observed) spectra
-        print(obs_path)
         spectrum = read_spec(os.path.join(obs_path, s), ftype='bin')
         wave = spectrum[0]
         flux = spectrum[1]

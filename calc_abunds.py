@@ -7,9 +7,9 @@ module_path = os.path.abspath(os.path.join('..'))
 if module_path not in sys.path:
     sys.path.append(module_path)
 
-from functions.constants import *
-from functions.spectra import wavg
-from functions.line_list_utils import read_linelist
+from asap_lib.constants import *
+from asap_lib.spectra import wavg
+from asap_lib.line_list_utils import read_linelist
 
 """
 Calculate Abundances

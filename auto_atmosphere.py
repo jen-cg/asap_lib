@@ -75,28 +75,9 @@ import operator
 module_path = os.path.abspath(os.path.join('..'))
 if module_path not in sys.path:
     sys.path.append(module_path)
-
-from functions.user_input_utils import *
-from functions.calc_abunds import *
-
-
-# -----------------------------------------------------------------------------------------------------------------------
-'''
-###############################################################################################################################
-# IMPORTANT!!! - YOU MAY NEED TO CHANGE THE FOLLOWING BASED WHERE YOU ARE WORKING!!!
-###############################################################################################################################
-'''
-# Paths to model atmospheres
-spherical_model_atm_path = '/arc5/home/jglover/GRACES/Code/MARCS/grids/standard/sphere/'  # CHANGED
-plane_parallel_model_atm_path = '/arc5/home/jglover/GRACES/Code/MARCS/grids/standard/plane/'  # CHANGED
-
-'''
-###################################
-  ##### Default Parameters #####
-##### Change these if desired #####
-###################################
-'''
-default_vmicro = 1.8
+from asap_lib.config import spherical_model_atm_path, plane_parallel_model_atm_path, default_vmicro
+from asap_lib.user_input_utils import *
+from asap_lib.calc_abunds import *
 
 
 # -----------------------------------------------------------------------------------------------------------------------
