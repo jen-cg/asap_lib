@@ -973,7 +973,7 @@ def auto_atmosphere(paramstxt=False,
                 stop1 = line.find(' = ')
                 stop2 = line.find('${')
                 data[d] = line[:stop1 + 3] + out_path + line[stop2:]
-                out_file_name = out_path + line[stop2:]
+                out_file_name = line[stop2:]
 
         # ----------------- Update the models that make the interpolation cube
         k = 1
