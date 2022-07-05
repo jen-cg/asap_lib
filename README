@@ -1,15 +1,5 @@
-Developing a little "package" of functions to do this spectroscopy stuff with
-- Mainly Colin has very long files of functions and sometimes files have repeats of functions
-- I want to collate them all, so they do not repeat and all the functions can be in the same place.
-- I also want to tidy them a bit (to my preferences any way)
-
-- Eventually when I do ghost stuff this will form the basis of the GHOST version of the code
-
-Authors
---------
-- Originally written by Colin Kielty.
-- Updated, and reorganized by Jennifer Glover
-
+# ASAP: A Spectral Analysis Pipeline
+## Driver Code
 
 Short Descriptions
 --------------------
