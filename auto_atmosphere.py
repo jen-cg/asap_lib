@@ -1226,6 +1226,6 @@ def auto_atmosphere(paramstxt=False,
         # -----------------------------------------------Write the final file ------------------------------------------
         print('\n------- Writing the final MOOG compatible atmosphere for star {} of {}'.format(i + 1, len(params[0])))
 
-        with open( os.path.join( os.getcwd(), 'moog_temp/out_file_mmod'), 'w') as file:
+        with open(os.path.join(os.getcwd(), 'moog_temp/'+out_file_mmod), 'w') as file:
             file.writelines(new_dat)
-            print('MOOG compatible atmosphere saved to ' + out_file_mmod)
+            print('MOOG compatible atmosphere saved to moog_temp/' + out_file_mmod)
