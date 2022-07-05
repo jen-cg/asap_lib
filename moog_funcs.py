@@ -960,10 +960,10 @@ def moog_looper(spec_name,
     """
 
     # ----------------- Define the trimmed spectrum for future use (will be created in current working directory)
-    trim_spec = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '_trimmed.xy')
+    trim_spec = spec_name + '_trimmed.xy' #os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '_trimmed.xy')
 
     # ----------------- Define the MOOG output
-    smo_out = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.sout')
+    smo_out = spec_name + '.sout' #os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.sout')
 
     # ----------------- Read in the lines from the line_dictionary omitting the "Atmosphere" entry
     keys = line_dictionary.keys()
