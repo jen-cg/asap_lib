@@ -960,10 +960,10 @@ def moog_looper(spec_name,
     """
 
     # ----------------- Define the trimmed spectrum for future use (will be created in current working directory)
-    trim_spec = spec_name + '_trimmed.xy'
+    trim_spec = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '_trimmed.xy')
 
     # ----------------- Define the MOOG output
-    smo_out = spec_name + '.sout'
+    smo_out = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.sout')
 
     # ----------------- Read in the lines from the line_dictionary omitting the "Atmosphere" entry
     keys = line_dictionary.keys()
@@ -1167,10 +1167,10 @@ def moog_best_lines(spec_name,
     """
 
     # ----------------- Define the trimmed spectrum for future use (will be created in current working directory)
-    trim_spec = spec_name + '_trimmed.xy'
+    trim_spec = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '_trimmed.xy')
 
     # ----------------- Define the MOOG output
-    smo_out = spec_name + '.sout'
+    smo_out = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.sout')
 
     # ----------------- Read in the lines from the line_dictionary
     keys = line_dictionary.keys()
@@ -1561,10 +1561,10 @@ def moog_blend_looper(spec_name, spectrum, line_dictionary, model_atm,
                       fixed_y=None,
                       save_name=None):
     # Define the trimmed spectrum for future use (will be created in current working directory)
-    trim_spec = spec_name + '_trimmed.xy'
+    trim_spec = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '_trimmed.xy')
 
     # Define the MOOG output
-    smo_out = spec_name + '.sout'
+    smo_out = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.sout')
 
     if plots:
         plt.figure()
@@ -1852,10 +1852,10 @@ def moog_best_blend(spec_name, spectrum, line_dictionary, model_atm,
                     fixed_x=None,
                     save_name=None):
     # Define the trimmed spectrum for future use (will be created in current working directory)
-    trim_spec = spec_name + '_trimmed.xy'
+    trim_spec = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '_trimmed.xy')
 
     # Define the MOOG output
-    smo_out = spec_name + '.sout'
+    smo_out = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.sout')
 
     # best_blend_pars:
     # 'linelist(0)  atom(1)  ref_wave(2)  smog(3)  offset(4)
