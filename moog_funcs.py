@@ -1295,7 +1295,7 @@ def moog_best_lines(spec_name,
                 sflux = np.asarray(specs[1], dtype=np.float)
 
                 # ----------------- Estimate how well the observed spectrum matches the synthetic one
-                abs_abund, ref_m = parse_moog_out(spec_name + '.out')
+                abs_abund, ref_m = parse_moog_out(os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.out'))
 
                 abund_info = [a, smog, abs_abund, ref_m]
 
