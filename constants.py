@@ -101,7 +101,7 @@ elem_dict = {
     65.1: 'Tb II',
     66.1: 'Dy II',
     68.1: 'Er II',
-    69.1: 'Tm II',
+    69.0: 'Tm I', 69.1: 'Tm II',
     72.1: 'Hf II',
     76.0: 'Os I',
     77.0: 'Ir I',
