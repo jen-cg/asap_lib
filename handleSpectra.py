@@ -267,3 +267,30 @@ def bin2DAOxy(spectra, spaths, xypaths, lims=None, masks=None):
 
         with open(os.path.join(xypaths[i], name + '_daoM.xy'), 'w') as file:
             file.writelines(lines)
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def write2xy(wave, flux, spath):
+    """
+    Write a .xy spectral file from wavelength and flux arrays
+
+    :param wave:  (array-like) Wavelength array
+    :param flux: (array-like) Flux array corresponding to the wavelengths in wave
+    :param spath: (str) Path to file you wish to save.  Ie Data/name
+
+    Saves a .xy file at spath
+    """
+    if len(wave) != len(flux):
+        raise TypeError("Wavelength and flux arrays must be the same length")
+
+    lines = []
+    for j in range(len(wave)):
+        if j != len(wave) - 1:
+            line = str(round(wave[j], 8)) + ' ' + str(round(flux[j], 8)) + '\n'
+            lines.append(line)
+        else:
+            line = str(round(wave[j], 8)) + ' ' + str(round(flux[j], 8))
+            lines.append(line)
+
+    with open(spath + '_.xy', 'w') as file:
+        file.writelines(lines)
