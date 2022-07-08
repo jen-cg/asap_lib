@@ -270,27 +270,49 @@ def bin2DAOxy(spectra, spaths, xypaths, lims=None, masks=None):
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def write2xy(wave, flux, spath):
+def write2xy(wave, flux, err, spath):
     """
-    Write a .xy spectral file from wavelength and flux arrays
+    Write a .xy spectral file from wavelength, flux, and flux error arrays
 
     :param wave:  (array-like) Wavelength array
     :param flux: (array-like) Flux array corresponding to the wavelengths in wave
+    :param err: (array-like) Flux error array corresponding to the wavelengths in wave
     :param spath: (str) Path to file you wish to save.  Ie Data/name
 
     Saves a .xy file at spath
     """
-    if len(wave) != len(flux):
-        raise TypeError("Wavelength and flux arrays must be the same length")
+    if len(wave) != len(flux) or len(wave) != len(err):
+        raise TypeError("Wavelength, flux, and error arrays must be the same length")
 
     lines = []
     for j in range(len(wave)):
         if j != len(wave) - 1:
-            line = str(round(wave[j], 8)) + ' ' + str(round(flux[j], 8)) + '\n'
+            line = str(round(wave[j], 8)) + ' ' + str(round(flux[j], 8)) + ' ' + str(round(err[j], 8)) + '\n'
             lines.append(line)
         else:
-            line = str(round(wave[j], 8)) + ' ' + str(round(flux[j], 8))
+            line = str(round(wave[j], 8)) + ' ' + str(round(flux[j], 8)) + ' ' + str(round(err[j], 8))
             lines.append(line)
 
     with open(spath + '.xy', 'w') as file:
         file.writelines(lines)
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def write2bin(wave, flux, err, spath):
+    """
+    Write a .bin spectral file from wavelength, flux, and flux error arrays
+
+    :param wave:  (array-like) Wavelength array
+    :param flux: (array-like) Flux array corresponding to the wavelengths in wave
+    :param err: (array-like) Flux error array corresponding to the wavelengths in wave
+    :param spath: (str) Path to file you wish to save.  Ie Data/name
+
+    Saves a .bin file at spath
+    """
+    if len(wave) != len(flux) or len(wave) != len(err):
+        raise TypeError("Wavelength, flux, and error arrays must be the same length")
+
+    colheads = ['wave', 'flux', 'err']
+    table = Table([wave, flux, err], names=colheads)
+
+    pickle.dump(table, open(spath + '.bin', 'wb'))
