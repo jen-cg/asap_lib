@@ -292,5 +292,5 @@ def write2xy(wave, flux, spath):
             line = str(round(wave[j], 8)) + ' ' + str(round(flux[j], 8))
             lines.append(line)
 
-    with open(spath + '_.xy', 'w') as file:
+    with open(spath + '.xy', 'w') as file:
         file.writelines(lines)
