@@ -76,7 +76,7 @@ def find_nearest(arr, value):
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def order_cut(spectra, spath, opath=None, save=False, save_locs=False):
+def order_cut(spectra, spath, opath=None, save=False, save_locs=False, ftype='fits'):
     """
     A function to correct order overlap.
 
@@ -98,6 +98,8 @@ Input are:
 
 "save_locs" - If True, save the locations of the order overlaps
     """
+    if ftype not in ['fits', 'bin']:
+        raise TypeError('ftype must be fits or bin')
 
     if type(spectra) == str:
         spectra = [spectra]
@@ -108,7 +110,8 @@ Input are:
     # For each spectrum:
     for s in spectra:
         # Get wavelength, flux, and error information
-        wave, flux, err = read_spec(os.path.join(spath, s))
+
+        wave, flux, err = read_spec(os.path.join(spath, s), ftype=ftype)
 
         olap_locs = []
 
@@ -932,7 +935,7 @@ def rvcor(spectra,
     Inputs
     -------
 
-    spectra: A list of spectra to which to apply the radial velcocity correction
+    spectra: A list of spectra to which to apply the radial velocity correction
 
     obs_path: The path to the folder which contains the spectra
 
