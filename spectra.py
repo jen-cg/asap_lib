@@ -1,10 +1,6 @@
 import os
 import sys
-import matplotlib.pyplot as plt
-import scipy.stats as spst
-import scipy.signal as spsi
 from scipy import interpolate
-from scipy.interpolate import interp1d
 from scipy.ndimage.filters import gaussian_filter
 from scipy.ndimage.filters import gaussian_filter1d
 
@@ -12,9 +8,8 @@ from scipy.ndimage.filters import gaussian_filter1d
 module_path = os.path.abspath(os.path.join('..'))
 if module_path not in sys.path:
     sys.path.append(module_path)
-
-from asap_lib.handleSpectra import *
 from asap_lib.constants import *
+from asap_lib.cont_norm import *
 
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -78,7 +73,8 @@ def find_nearest(arr, value):
 # -----------------------------------------------------------------------------------------------------------------------
 def order_cut(spectra, spath, opath=None, save=False, save_locs=False, ftype='fits'):
     """
-    A function to correct order overlap.
+    A function to correct order overlap (A Standardize OPERA function)
+    ----------
 
     "order_cut" identifies where the spectral arrays 'double back" (i.e. where we jump from the red end of echelle
     order N to the blue end of echelle order N + 1) and combines those two regions via a weighted average using the
@@ -259,6 +255,7 @@ def spec_ex(spectra,
             smo=None):
     """
     Examine some spectra
+    ----------
 
     spectra: Input spectra you want to see. Accept lists or strings
     for star name only. Two column Wavelength/Flux or binary formats only
@@ -344,6 +341,7 @@ def spec_trim(spectra,
               save=False):
     """
     Trim spectra / a spectrum to a certain wavelength range
+    ------------
 
     spectra: Input spectra you want to see. Accepts list or string
     for star name only. Two column Wavelength/Flux or binary formats only
@@ -407,6 +405,7 @@ def spec_interp(spectra,
                 save=False):
     """
     Interpolate spectra to a new wavelength grid
+    --------
 
     spectra: Input spectra you want to see. Accepts list or string
     for star name only. Two column Wavelength/Flux or binary formats only
@@ -469,11 +468,13 @@ def list_duplicates_of(seq, item):
 def spec_stack(spectra, name, occurs=None, spath=None, combpath=None, print_prog=False):
     """
     Stack (combine) the visit spectra using a weighted average
+    --------
+    Spectra must be interpolated to the same wavelength grid
 
     spectra: list of all spectra files
     name: object name
     occurs: files corresponding to the visits of name (required if there are multiple objects)
-    spath: path to the spectral files to combine (should be interpolated to the same grid)
+    spath: path to the spectral files to combine
     combpath: path to the stacked spectra
     """
 
@@ -657,104 +658,6 @@ def deg_res(spectra, spath, start_res, new_res, resample=False, save_smo_spec=Tr
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-# def pyfxcor(wave, flux, s_wave, s_flux, plot_shift=False):
-#     """
-#     Find the radial velocity shift between the observed and synthetic spectra.
-#     Restrict the observed and synthetic spectra to regions around certain spectral features
-#
-#     Inputs
-#     ------
-#     waves: An array of wavelengths for the observed spectrum
-#     fluxes: The fluxes corresponding to the wavelengths in wave
-#
-#     s_waves: An array of wavelengths for the synthetic / reference spectrum
-#     s_fluxes: The fluxes corresponding to the wavelengths in s_waves
-#
-#     plot_shift: If True plot the shifted spectrum for each window (chopped section of spectrum)
-#     """
-#
-#     # ----------------- Make copies of the arrays to not overwrite things
-#     t_w = np.copy(wave)  # Temporary observed wavelength array
-#     t_f = np.copy(flux)  # Temporary observed flux arrays
-#     t_s_w = np.copy(s_wave)  # Temporary synthetic wavelength array
-#     t_s_f = np.copy(s_flux)  # Temporary synthetic  flux arrays
-#
-#     # ----------------- Interpolate the synthetic spectra on to the observed spectra grid
-#     '''
-#     For the synthetic spectrum find a function (f) which gives synthetic flux as a function of synthetic wavelength
-#     '''
-#     f = interpolate.interp1d(t_s_w, t_s_f, kind='cubic', bounds_error=False, fill_value=1.0)
-#     '''Evaluate this function at the wavelengths of the observed wavelength array. This generates an array of
-#     synthetic fluxes corresponding to the same wavelength grid as the observed fluxes (new_tsf) '''
-#     new_tsf = f(t_w)
-#
-#     # -----------------
-#     obs = np.copy(t_f)
-#     synth = np.copy(new_tsf)
-#
-#     # ----------------- Regularize the datasets by subtracting off the mean and dividing by the standard deviation
-#     obs = obs - obs.mean()
-#     obs = obs / obs.std()
-#
-#     synth = synth - synth.mean()
-#     synth = synth / synth.std()
-#
-#     # ----------------- Find the cross-correlation in pixel values
-#     '''The cross-correlation works by shifting one array relative to the other and calculating the correlation (
-#     similarity) between the shifted arrays
-#
-#     First, find the cross-correlation between the  observed spectrum and the synthetic spectrum.  xcorr is an array
-#     of correlation values, each corresponding to a different pixel shift between the spectra '''
-#     xcorr = spsi.correlate(obs, synth, method='fft')
-#
-#     # Create an array (dp) which contains the pixel shifts corresponding to each correlation value in xcorr
-#     nsamples = obs.size
-#     dp = np.arange(1 - nsamples, nsamples)
-#
-#     '''We want the pixel shift corresponding to the highest correlation value - xcorr.argmax() gives the index of the
-#     xcorr array corresponding to the highest correlation value - dp[xcorr.argmax()] gives the pixel shift
-#     corresponding to the highest correlation value.  We want to select the inverse of this shift to correct for the
-#     radial velocity. '''
-#     pix_shift = -dp[xcorr.argmax()]
-#
-#     # ----------------- Convert the pixel shift to a velocity
-#     # Calculate the conversion between pixels and velocity
-#
-#     # Find the average change in wavelength per pixel
-#     dispersions = []
-#     for i in range(len(t_w) - 1):
-#         dispersions.append(t_w[i + 1] - t_w[i])
-#     dispersion = np.mean(dispersions)
-#
-#     # Find the change in wavelength corresponding to the pixel shift
-#     d_lam = dispersion * pix_shift
-#
-#     # Let the rest wavelength be the mean of the synthetic wavelength array
-#     lam = np.median(t_s_w)
-#
-#     # Get the velocity correction
-#     vel = s_o_l * (d_lam / lam)
-#
-#     # ----------------- RV correct the wavelength array
-#     corr_wave = np.copy(t_w) * (1.0 + (vel / s_o_l))
-#
-#     # ----------------- Plot the shifted spectra
-#     if plot_shift:
-#         shifted_f = np.roll(t_f, pix_shift)
-#         plt.figure(figsize=(8, 5))
-#         plt.plot(t_w, new_tsf, color='tab:orange', linewidth=0.5, label='Template')
-#         plt.plot(t_w, t_f, color='k', linestyle=':', linewidth=0.5, label='Original Obs')
-#         plt.plot(t_w, shifted_f, linewidth=0.5, label='Corrected Obs: Shifted flux')
-#         plt.plot(corr_wave, t_f, linewidth=0.5, label='Corrected Obs: Corrected Wavelengths')
-#         plt.legend()
-#         plt.title('plot_shift=True\nShifted Spectrum')
-#         plt.xlabel(r'Wavelength ($\AA$)')
-#         plt.ylabel('Normalized Flux')
-#         plt.show()
-#
-#     return vel
-
-
 def pyfxcor(wave, flux, s_wave, s_flux, v_tol=5.0, print_vel=False, plot_shift=False, return_corr_wave=False):
     """
     Find the radial velocity shift between the observed and synthetic spectra.
@@ -870,7 +773,7 @@ def pyfxcor(wave, flux, s_wave, s_flux, v_tol=5.0, print_vel=False, plot_shift=F
 # -----------------------------------------------------------------------------------------------------------------------
 def doppler_corr(waves, fluxes, s_waves, s_fluxes, plot_shift=False):
     """
-    Apply a Doppler correction to the given spectrun
+    Apply a Doppler correction to the given spectrum
 
     Inputs
     -------
@@ -1227,70 +1130,10 @@ def order_chop(wave, flux, err, w_lo, w_hi):
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def sig_clip(wave, flux, clo, chi, window, step, reference):
-    """
-    Perform sigma-clipping on the provided spectrum or spectrum segment
-
-    Inputs
-    ------
-
-    wave: the wavelength array
-
-    flux: the flux array corresponding to the wavelength array
-
-    clo: the lower sigma-cipping limit
-
-    chi: the upper sigma-clipping limit
-
-    window: Size of the sliding boxar in pixels; needs to be an odd-number
-
-    step: some value that the Savitzky-Golay filter uses
-
-    reference: reference flux value for continuum
-    """
-
-    # ----------------- Clip the flux array
-    '''
-    Sigma clip the spectrum (flux) so we don't try to fit noise. 
-    c_flux is the flux array with the clipped flux values removed. 
-    min_t is the lower flux threshold, and max_t is the upper flux threshold that spst.sigmaclip used in clipping.
-    '''
-    c_flux, min_t, max_t = spst.sigmaclip(flux, low=clo, high=chi)
-
-    # ----------------- Extract the spectrum data that is within the clipping threshold values
-    good = np.where((flux >= min_t) & (flux <= max_t))[0]
-    c_wave = wave[good]
-
-    # ----------------- Check that the window is okay, if not, shorten it to an okay length
-    if len(c_wave) <= window:
-        close = len(c_wave - 10)
-        window = int(np.ceil(close) // 2 * 2 + 1)
-
-    # ----------------- Rather than fitting a polynomial, heavily smooth the spectrum and fit to the smoothed curve
-    filt = spsi.savgol_filter(c_flux, window, step)
-
-    # ----------------- Interpolate the filtered data back onto the original wavelength grid
-    f = interp1d(c_wave, filt, bounds_error=False, fill_value='extrapolate')
-    curve = f(wave)
-
-    # -----------------
-    '''
-    Shift the polynomial by the standard deviation of the flux array. 
-    The goal here is to set the continuum closer to 1.0 (rather than the mean of the spectrum)
-    '''
-    cont = curve + np.std(c_flux)
-
-    median = np.median(cont)
-    scale = reference / median
-    cont = scale * cont
-
-    return c_wave, c_flux, curve, cont
-
-
-# -----------------------------------------------------------------------------------------------------------------------
 def find_late_gaps(wave, flux, last_order):
     """
     Find the starting and ending wavelengths of the wavelength gaps that occur in the spectra at high Echelle orders
+    (A Standardize OPERA function)
 
     Inputs
     -------
@@ -1353,7 +1196,7 @@ def find_late_gaps(wave, flux, last_order):
 # -----------------------------------------------------------------------------------------------------------------------
 def find_order_splits(wave, flux, orders):
     """
-    Find the locations where orders change
+    Find the locations where orders change (A Standardize OPERA function)
 
     Inputs
     -------
@@ -1379,149 +1222,3 @@ def find_order_splits(wave, flux, orders):
     good_order.append([late_gaps[-1][1], np.max(wave)])
 
     return good_order
-
-
-# -----------------------------------------------------------------------------------------------------------------------
-def spec_norm(spectra, spath,
-              order_info,
-              clips, window, step, reference,
-              plot_orig=False,
-              plot_clip=False,
-              plot_norm=False,
-              save_norm=False,
-              out_path=None):
-    """
-    Normalize spectra with a sliding box asymmetric clipping routine
-
-    Inputs:
-    --------
-
-    spectra: A list of spectra to normalize
-    spath: The path to the spectra to normalize
-    order_info: A file containing some information where order overlaps roughly occur
-    clips: [lower, upper] the lower and upper sigma to clip
-    window: Size of the sliding boxcar in pixels; needs to be an odd-number
-    step: some value that the Savitzky-Golay filter uses
-    reference: reference flux value for continuum
-
-    """
-
-    # ----------------- Read in information about where the orders overlap
-    '''
-    Earlier a file containing information about order overlaps was generated.  
-    '''
-    orders = np.load(order_info, allow_pickle=True)
-    olaps = []
-    for o in orders:
-        stop = [o[-1]]
-        for i in range(len(o) - 2):
-            stop.append([o[i][1], o[i + 1][1]])
-        olaps.append(stop)
-
-    # For each order overlap find the mean start and stop wavelength of that order
-    orders = []
-    for i in range(1, len(olaps[0])):
-        sts = []
-        sps = []
-        for o in olaps:
-            sts.append(o[i][0])
-            sps.append(o[i][1])
-        start = np.mean(sts)
-        stop = np.mean(sps)
-        pair = [start, stop]
-        orders.append(pair)
-
-    # ----------------- For each spectrum
-    for spectrum in spectra:
-
-        # ----------------- Read in the spectrum
-        data = read_spec(os.path.join(spath, spectrum), ftype='bin')
-        wave = data[0]
-        flux = data[1]
-        err = data[2]
-
-        # ----------------- Plot Original Spectrum
-        if plot_orig:
-            fig1 = plt.figure(figsize=(8, 5))
-            ax1 = fig1.add_subplot(111)
-            ax1.plot(wave, flux, color='k', linewidth=0.5)
-            ax1.set_title('plot_orig=True\nOriginal Spectrum and Orders')
-            plt.xlabel('Wavelength [$\AA$]')
-            plt.ylabel('Flux')
-            ax1.set_ylim(-5, 5)
-
-        # ----------------- Plot Clipped Spectrum
-        if plot_clip:
-            fig2 = plt.figure(figsize=(8, 5))
-            ax2 = fig2.add_subplot(111)
-            plt.xlabel('Wavelength [$\AA$]')
-            plt.ylabel('Flux')
-
-        # ----------------- Using the mean order overlap start and stop, find the start and stop of each order
-        good_order = find_order_splits(wave, flux, orders)
-
-        # ----------------- Output arrays for the normalized spectrum
-        flat_flux = np.array([])
-        flat_wave = np.array([])
-        flat_err = np.array([])
-
-        # -----------------  For each order in the spectrum...
-        for i in range(1, len(good_order)):
-
-            # ----------------- Plot Original
-            if plot_orig:
-                # If plotting, highlight where the order overlaps occur
-                ax1.axvline(good_order[i][0], ls=':', c='g')
-                ax1.axvline(good_order[i][1], ls=':', c='r')
-
-            # -----------------  Isolate each order to perform a localized continuum normalization
-            short_wave, short_flux, short_err = order_chop(wave, flux, err, good_order[i][0], good_order[i][1])
-
-            # ----------------- Sigma-Clip
-            '''
-            Using a sigma-clipping routine, clip the short spectrum and use a Savitzky-Golay filter to determine 
-            the global structure of the short spectrum. 
-            This seems to work better than a polynomial as it handles "jumps" better
-            '''
-            c_wave, c_flux, curve, cont = sig_clip(short_wave, short_flux, clips[0], clips[1], window, step, reference)
-
-            # ----------------- Plot Clipped Spectrum
-            if plot_clip:
-                ax2.plot(short_wave, short_flux, color='k', linewidth=0.5, label='Order')
-                ax2.plot(c_wave, c_flux, color='tab:green', linewidth=0.5, label='Clipped')
-                ax2.plot(short_wave, curve, color='tab:blue', linewidth=0.5, label='Curve')
-                ax2.plot(short_wave, cont, color='tab:red', linewidth=0.5, label='Continuum')
-
-            # ----------------- Normalize the order
-            # Divide the order by the continuum to normalize that order
-            flat = np.array(short_flux / cont)
-
-            # ----------------- Concatenate the order onto the output arrays
-            flat_flux = np.concatenate([flat_flux, flat])
-            flat_wave = np.concatenate([flat_wave, short_wave])
-            flat_err = np.concatenate([flat_err, short_err])
-
-        # ----------------- Plot Clipped Spectrum
-        if plot_clip:
-            ax2.set_title('plot_clip=True\nOrder by Order Curves: %s' % spectrum)
-            ax2.set_ylim(-5, 5)
-
-        # ----------------- Plot Normalized Spectrum
-        if plot_norm:
-            plt.figure(figsize=(8, 5))
-            plt.plot(flat_wave, flat_flux, color='k', linewidth=0.5)
-            # plt.ylim(-0.01,1.5)
-            plt.title('plot_norm=True\nFinal normalized: %s' % spectrum)
-            plt.xlabel('Wavelength [$\AA$]')
-            plt.ylabel('Flux')
-            plt.axhline(1.0, ls=':', c='gray')
-            plt.ylim(-5, 5)
-
-        # ----------------- Save Continuum Normalized Spectrum
-        if save_norm:
-            name = os.path.splitext(spectrum)[0]
-            data = [flat_wave, flat_flux, flat_err]
-            colheads = ['wave', 'flux', 'err']
-            table = Table(data, names=colheads)
-            pickle.dump(table, open(out_path + name + '.norm.bin', 'wb'))
-# -----------------------------------------------------------------------------------------------------------------------

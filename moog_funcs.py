@@ -20,7 +20,6 @@ import time
 import subprocess
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
-from astropy.stats import sigma_clip
 
 # ----------------- Import the other files of functions
 module_path = os.path.abspath(os.path.join('..'))
@@ -30,13 +29,12 @@ if module_path not in sys.path:
 from asap_lib.handleSpectra import *
 from asap_lib.spectra import pyfxcor
 from asap_lib.line_list_utils import *
+from asap_lib.cont_norm import find_continuum2
 
 # Command line call for your version of MOOGSILENT. Might just be 'MOOGSILENT'.
 # Could also be something like '/usr/local/moognov19/MOOGSILENT'
 
-
 moog_silent_call = 'MOOGSILENT'  # '/arc5/usr/local/bin/MOOGSILENT'
-
 
 # -----------------------------------------------------------------------------------------------------------------------
 def moogstring2float(string):
@@ -446,79 +444,6 @@ def run_moog():
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-# def pyfxcor(obswave, obsflux, synthwave, synthflux, v_tol=5.0, print_vel=False, plot_shift=False):
-#     # Make copies of the arrays to not overwrite things
-#     t_w = np.copy(obswave)
-#     t_f = np.copy(obsflux)
-#     t_s_w = np.copy(synthwave)
-#     t_s_f = np.copy(synthflux)
-#
-#     # Interpolate the synthetic spectra on to the observed spectra grid to avoid issues
-#     f = interp1d(t_s_w, t_s_f, kind='cubic', bounds_error=False, fill_value=1.0)
-#
-#     # Transpose the new interpolated flux back onto the original (copied)wavelength grid
-#     new_tsf = f(t_w)
-#
-#     obs = np.copy(t_f)
-#     synth = np.copy(new_tsf)
-#
-#     # Regularize the datasets by subtracting off the mean and dividing by the standard deviation
-#     obs -= obs.mean()
-#     obs /= obs.std()
-#     synth -= synth.mean()
-#     synth /= synth.std()
-#
-#     nsamples = obs.size
-#
-#     # Find the cross-correlation (this is in pixel values)
-#     xcorr = spsi.correlate(obs, synth, method='fft')
-#
-#     # delta pix array to match xcorr
-#     dp = np.arange(1 - nsamples, nsamples)
-#     pix_shift = -dp[xcorr.argmax()]
-#
-#     # Calculate the conversion between pixels and velocity
-#     dispersions = []
-#     for i in range(len(t_w) - 1):
-#         dispersions.append(t_w[i + 1] - t_w[i])
-#
-#     dispersion = np.mean(dispersions)
-#
-#     d_lam = dispersion * pix_shift
-#
-#     lam = np.median(t_s_w)
-#
-#     vel = s_o_l * (d_lam / lam)
-#
-#     if print_vel:
-#         print(vel)
-#
-#     # If the corrected velocity is too large,
-#     # assume an error occured and make no change
-#     if np.abs(vel) > v_tol:
-#         corr_wave = np.copy(t_w)
-#
-#     # If the RV is small, do the shift
-#     else:
-#         # RV correct the wavelength array
-#         corr_wave = np.copy(t_w) * (1.0 + (vel / s_o_l))
-#
-#     if plot_shift:
-#         shifted_f = np.roll(t_f, pix_shift)
-#         plt.figure()
-#         plt.plot(t_w, new_tsf, 'k', label='Template')
-#         plt.plot(t_w, t_f, 'gray', linestyle=':', label='Original Obs')
-#         # plt.plot(t_w, shifted_f, label='Corrected Obs1')
-#         plt.plot(corr_wave, t_f, label='Corrected Obs')
-#         plt.legend()
-#         plt.xlabel(r'Wavelength ($\AA$)')
-#         plt.ylabel('Normalized Flux')
-#         plt.show()
-#
-#     return corr_wave, vel
-
-
-# -----------------------------------------------------------------------------------------------------------------------
 def parse_moog_out(moog_outs):
     """
     Parse MOOG output files, specifically the MOOG summary_out files.  Usually these will be saved at name.out
@@ -544,119 +469,6 @@ def parse_moog_out(moog_outs):
                 ref_metallicity = float(l.split()[-1].split('=')[-1])
 
     return absolute_abund, ref_metallicity
-
-
-# -----------------------------------------------------------------------------------------------------------------------
-def find_continuum(obswave,
-                   obsflux,
-                   linewaves,
-                   ref_wave=None,
-                   line_width=0.5,
-                   wave_range=5.0,
-                   trim_sigma=[2.0, 2.0],
-                   retrim=True):
-    """
-    A function to identify the wavelengths and fluxes of the continuum near a spectral line.
-    This is the old / original version written by Colin Kielty
-
-    :param obswave: (array) Wavelength array of the spectrum
-
-    :param obsflux: (array) Flux array corresponding to the wavelength array of the spectrum
-
-    :param linewaves: (list/array or float) Wavelength(s) of the spectral lines in question
-
-    :param ref_wave:
-
-    :param line_width: (float) Estimated width of the spectral line in wavelength units (angstroms)
-
-    :param wave_range: (float) In the case of a single line, width of window around the line. In the case of several
-    lines, width from the lines with the minimum and maximum wavelengths.  In units of wavelength (angstroms)
-
-    :param trim_sigma: [Upper bound, lower bound].  For use in attempting to remove additional lines when identifying
-    the continuum (retrim = True).  Keep only what is within [Upper bound, lower bound] sigma from the mean as the
-    continuum.  An appropriate choice of trim_sigma will depend on the signal-to-noise of the spectrum
-
-    :param retrim: (True/False) Attempt to trim additional lines from the continuum ?
-    :return:
-    """
-
-    # ----------------  Check if we are fitting one line or many
-    # True if many lines (list, tuple, np.ndarray), False if single line (float)
-    are_lines = isinstance(linewaves, (list, tuple, np.ndarray))
-
-    # ---------------- Define a window around the line(s). Large enough to have continuum, small enough to minimize
-    # effects of other lines
-    if are_lines:
-        # If there are many  lines given, take the min and max wavelength of those lines
-        short = [np.min(linewaves) - wave_range, np.max(linewaves) + wave_range]
-    else:
-        # If only one line is given
-        short = [linewaves - wave_range, linewaves + wave_range]
-
-    # ---------------- Check the bounds and use the limits of the observed spectrum if needed
-    if short[0] < obswave.min():
-        short[0] = obswave.min()
-    if short[1] > obswave.max():
-        short[1] = obswave.max()
-
-    # ---------------- Trim the observed spectrum to the window around the line(s)
-    good = np.where((obswave >= short[0]) & (obswave <= short[1]))[0]
-    short_wave = obswave[good]
-    short_flux = obsflux[good]
-
-    # ---------------- Define a short region of the spectrum +/- line_width from the line center
-    if are_lines:
-        specline = [ref_wave - line_width, ref_wave + line_width]
-    else:
-        specline = [linewaves - line_width, linewaves + line_width]
-
-    # ---------------- Check the bounds and use the limits of the trimmed spectrum if needed
-    if specline[0] < short_wave.min():
-        specline[0] = short_wave.min()
-    if specline[1] > short_wave.max():
-        specline[1] = short_wave.max()
-
-    # ---------------- Trim the line from the spectrum to find the continuum
-    not_line = np.where((short_wave <= specline[0]) | (short_wave >= specline[1]))[0]
-    cont_wave = short_wave[not_line]
-    cont_flux = short_flux[not_line]
-
-    # ---------------- Attempt to remove other lines
-    if retrim:
-        cont_flux_mean = np.nanmean(cont_flux)
-        cont_flux_std = np.nanstd(cont_flux)
-        upper_bound = cont_flux_mean + (trim_sigma[0] * cont_flux_std)
-        lower_bound = cont_flux_mean - (trim_sigma[1] * cont_flux_std)
-        good = np.where((cont_flux <= upper_bound) & (cont_flux >= lower_bound))[0]
-
-        cont_flux = cont_flux[good]
-        cont_wave = cont_wave[good]
-
-    # ---------------- Return the continuum wavelengths and fluxes
-    return cont_wave, cont_flux
-
-
-# -----------------------------------------------------------------------------------------------------------------------
-def find_continuum2(wave, flux, sigma_lower, sigma_upper):
-    """
-    A function to identify the wavelengths and fluxes of the continuum.
-    This is a newer version of the code which uses asymmetric sigma clipping
-
-    :param wave: (array) An array of wavelength values
-    :param flux: (array) An array of corresponding flux values
-    :param sigma_lower: (float) The lower sigma value
-    :param sigma_upper: (float) The upper sigma value
-    :return: clipped wavelength and flux arrays
-    (Points with flux outside the specified sigma limits have been removed)
-    """
-
-    sol = sigma_clip(flux, sigma_lower=sigma_lower, sigma_upper=sigma_upper, maxiters=None)
-
-    clip_flux = [flux[i] for i in range(len(sol.mask)) if sol.mask[i] == False]
-    clip_wave = [wave[i] for i in range(len(sol.mask)) if sol.mask[i] == False]
-
-    # ---------------- Return the continuum wavelengths and fluxes
-    return clip_wave, clip_flux
 
 
 # -----------------------------------------------------------------------------------------------------------------------

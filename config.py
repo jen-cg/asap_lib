@@ -12,9 +12,9 @@ dataDir = '/arc5/home/jglover/Data/'
 
 # -----------------------------------------------------------------------------------------------------------------------
 # Paths to model atmospheres
-spherical_model_atm_path = os.path.join( os.getcwd(), 'asap_lib/data/grids/standard/sphere/')
+spherical_model_atm_path = os.path.join(os.getcwd(), 'asap_lib/data/grids/standard/sphere/')
 
-plane_parallel_model_atm_path = os.path.join( os.getcwd(), 'asap_lib/data/grids/standard/plane/')
+plane_parallel_model_atm_path = os.path.join(os.getcwd(), 'asap_lib/data/grids/standard/plane/')
 
 # -----------------------------------------------------------------------------------------------------------------------
 # Default Parameters
