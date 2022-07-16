@@ -13,23 +13,18 @@ Updated on April 23, 2021 - changes made the moog_blends functions to write the 
 change to some output print statements
 
 """
-
 import os
 import sys
 import time
 import subprocess
-import matplotlib.pyplot as plt
-from scipy.interpolate import interp1d
 
 # ----------------- Import the other files of functions
 module_path = os.path.abspath(os.path.join('..'))
 if module_path not in sys.path:
     sys.path.append(module_path)
 
-from asap_lib.handleSpectra import *
-from asap_lib.spectra import pyfxcor
+from asap_lib.spectra import *
 from asap_lib.line_list_utils import *
-from asap_lib.cont_norm import find_continuum2
 
 # Command line call for your version of MOOGSILENT. Might just be 'MOOGSILENT'.
 # Could also be something like '/usr/local/moognov19/MOOGSILENT'
