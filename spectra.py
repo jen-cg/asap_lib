@@ -1101,8 +1101,8 @@ Input are:
 
     # ----------------- Save file of locations of the order overlaps
     if save_locs:
-        print('Saving locations of order overlaps to asap_lib/src/Standards_Olap_Info.npy')
-        np.save(os.path.join(os.getcwd(), 'asap_lib/src/Standards_Olap_Info.npy'), np.array(olaps, dtype=object))
+        print('Saving locations of order overlaps to Standards_Olap_Info.npy')
+        np.save(os.path.join(os.getcwd(), 'Standards_Olap_Info.npy'), np.array(olaps, dtype=object))
 
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -1228,6 +1228,7 @@ def find_order_splits(wave, flux, orders):
 
     return good_order
 
+# -----------------------------------------------------------------------------------------------------------------------
 def contnorm_sigclip(y, sigma_lower, sigma_upper):
     """
     Improve the continuum position with asymetric sigma-clipping
