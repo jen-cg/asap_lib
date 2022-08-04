@@ -767,10 +767,10 @@ def moog_looper(spec_name,
     """
 
     # ----------------- Define the trimmed spectrum for future use (will be created in current working directory)
-    trim_spec = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '_trimmed.xy')
+    trim_spec = os.path.join(os.getcwd(), spec_name + '_trimmed.xy')
 
     # ----------------- Define the MOOG output
-    smo_out = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.sout')
+    smo_out = os.path.join(os.getcwd(), spec_name + '.sout')
 
     # ----------------- Read in the lines from the line_dictionary omitting the "Atmosphere" entry
     keys = line_dictionary.keys()
@@ -848,7 +848,7 @@ def moog_looper(spec_name,
 
                 # ----------------- Modify batch.par
                 mod_batch('batch.par',
-                          summary=os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.out'),
+                          summary=os.path.join(os.getcwd(), spec_name + '.out'),
                           smoothed=smo_out,
                           spectrum=trim_spec,
                           model=model_atm,
@@ -871,7 +871,7 @@ def moog_looper(spec_name,
                 sflux = np.asarray(specs[1], dtype=np.float)
 
                 # ----------------- Estimate how well the observed spectrum matches the synthetic one
-                abs_abund, ref_m = parse_moog_out(os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.out'))
+                abs_abund, ref_m = parse_moog_out(os.path.join(os.getcwd(), spec_name + '.out'))
 
                 abund_info = [a, smog, abs_abund, ref_m]
 
@@ -974,10 +974,10 @@ def moog_best_lines(spec_name,
     """
 
     # ----------------- Define the trimmed spectrum for future use (will be created in current working directory)
-    trim_spec = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '_trimmed.xy')
+    trim_spec = os.path.join(os.getcwd(), spec_name + '_trimmed.xy')
 
     # ----------------- Define the MOOG output
-    smo_out = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.sout')
+    smo_out = os.path.join(os.getcwd(), spec_name + '.sout')
 
     # ----------------- Read in the lines from the line_dictionary
     keys = line_dictionary.keys()
@@ -1079,7 +1079,7 @@ def moog_best_lines(spec_name,
 
                 # ----------------- Modify batch.par
                 mod_batch('batch.par',
-                          summary=os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.out'),
+                          summary=os.path.join(os.getcwd(), spec_name + '.out'),
                           smoothed=smo_out,
                           spectrum=trim_spec,
                           model=model_atm,
@@ -1102,7 +1102,7 @@ def moog_best_lines(spec_name,
                 sflux = np.asarray(specs[1], dtype=np.float)
 
                 # ----------------- Estimate how well the observed spectrum matches the synthetic one
-                abs_abund, ref_m = parse_moog_out(os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.out'))
+                abs_abund, ref_m = parse_moog_out(os.path.join(os.getcwd(), spec_name + '.out'))
 
                 abund_info = [a, smog, abs_abund, ref_m]
 
@@ -1368,10 +1368,10 @@ def moog_blend_looper(spec_name, spectrum, line_dictionary, model_atm,
                       fixed_y=None,
                       save_name=None):
     # Define the trimmed spectrum for future use (will be created in current working directory)
-    trim_spec = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '_trimmed.xy')
+    trim_spec = os.path.join(os.getcwd(), spec_name + '_trimmed.xy')
 
     # Define the MOOG output
-    smo_out = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.sout')
+    smo_out = os.path.join(os.getcwd(), spec_name + '.sout')
 
     if plots:
         plt.figure()
@@ -1659,10 +1659,10 @@ def moog_best_blend(spec_name, spectrum, line_dictionary, model_atm,
                     fixed_x=None,
                     save_name=None):
     # Define the trimmed spectrum for future use (will be created in current working directory)
-    trim_spec = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '_trimmed.xy')
+    trim_spec = os.path.join(os.getcwd(), spec_name + '_trimmed.xy')
 
     # Define the MOOG output
-    smo_out = os.path.join(os.getcwd(), 'moog_temp/' + spec_name + '.sout')
+    smo_out = os.path.join(os.getcwd(), spec_name + '.sout')
 
     # best_blend_pars:
     # 'linelist(0)  atom(1)  ref_wave(2)  smog(3)  offset(4)

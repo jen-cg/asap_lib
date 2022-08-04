@@ -388,7 +388,7 @@ def which_grid():
 
     :return: the path to the appropriate grid
     """
-    with open(os.path.join(os.getcwd(),'moog_temp/params.txt'), 'r') as file:
+    with open(os.path.join(os.getcwd(),'params.txt'), 'r') as file:
         lines = file.readlines()
 
     ref_logg = float(lines[0].split()[1])
@@ -546,9 +546,9 @@ def mod_params_atoms(pristine_name,
         print('-The model atmosphere parameters are: \n{}'.format(params))
 
     # ----------------- Write parameters file
-    with open(os.path.join(os.getcwd(),'moog_temp/params.txt'), 'w') as file:
+    with open(os.path.join(os.getcwd(),'params.txt'), 'w') as file:
         file.writelines(params)
-        print('-Saving model atmosphere parameters to: moog_temp/params.txt ')
+        print('-Saving model atmosphere parameters to: params.txt ')
 
     # ----------------- Write atoms file
     atoms = ['logFe\n']
@@ -559,9 +559,9 @@ def mod_params_atoms(pristine_name,
         atoms.append('8.0 0.4 12.0 0.4 14.0 0.4 16.0 0.4 20.0 0.4 22.0 0.4 \n')
         atoms.append('8.0 0.4 12.0 0.4 14.0 0.4 16.0 0.4 20.0 0.4 22.0 0.4')
 
-    with open(os.path.join(os.getcwd(),'moog_temp/atoms.txt'), 'w') as file:
+    with open(os.path.join(os.getcwd(),'atoms.txt'), 'w') as file:
         file.writelines(atoms)
-        print('-Saving atoms to: moog_temp/atoms.txt')
+        print('-Saving atoms to: atoms.txt')
 
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -645,7 +645,7 @@ def auto_atmosphere(paramstxt=False,
     # -----------------  If a parameter file exists:
     if paramstxt:
         print('-Reading params.txt')
-        with open(os.path.join(os.getcwd(),'moog_temp/params.txt'), 'r') as file:
+        with open(os.path.join(os.getcwd(),'params.txt'), 'r') as file:
             # read a list of lines into data
             data = file.readlines()
 
@@ -758,7 +758,7 @@ def auto_atmosphere(paramstxt=False,
     # ------------------------------------------Read in the atomic information data-------------------------------------
     # -----------------  If an atomic information file exists:
     if atomstxt:
-        with open(os.path.join(os.getcwd(),'moog_temp/atoms.txt'), 'r') as file:
+        with open(os.path.join(os.getcwd(),'atoms.txt'), 'r') as file:
             # read a list of lines into data
             data = file.readlines()
 
@@ -1226,6 +1226,6 @@ def auto_atmosphere(paramstxt=False,
         # -----------------------------------------------Write the final file ------------------------------------------
         print('\n------- Writing the final MOOG compatible atmosphere for star {} of {}'.format(i + 1, len(params[0])))
 
-        with open(os.path.join(os.getcwd(), 'moog_temp/'+out_file_mmod), 'w') as file:
+        with open(os.path.join(os.getcwd(), out_file_mmod), 'w') as file:
             file.writelines(new_dat)
-            print('MOOG compatible atmosphere saved to moog_temp/' + out_file_mmod)
+            print('MOOG compatible atmosphere saved to ' + out_file_mmod)
