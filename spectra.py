@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from astropy.stats import sigma_clip
 from scipy import interpolate
 import scipy.stats as spst
+import copy
 from scipy.ndimage.filters import gaussian_filter, gaussian_filter1d, median_filter
 
 # ----------------- Import the other files of functions
@@ -1330,7 +1331,7 @@ class drawContinuum:
     ---------------
     Connects to a matplotlib figure via matplotlib event handling and allows user to draw a continuum by placing
      points on the given figure.
-    - Press 1 to place points, press 0 to finish, press any other key to pause.
+    - Click on the spectrum to place a point on the continuum. Right click that point to delete it
 
     Best For: "Raw" spectra which have not been continuum normalized yet, especially those with difficult and/or
     unusual continuums. For example, spectra which contain deep and wide spectral lines.
@@ -1339,8 +1340,6 @@ class drawContinuum:
 
     Parameters
     ----
-    :param fig: Matplotlib Figure instance
-    :param ax: Matplotlib Axes instance
     :param w: (list or array) wavelength array
     :param f: (list or array) flux array corresponding to w
 
@@ -1348,8 +1347,6 @@ class drawContinuum:
     ----
     self.cont: list of continuum values (corresponds to same wavelength grid as w)
     self.norm: list of normalized flux (corresponds to same wavelength grid as w)
-    self.xs: list of x positions of user click locations
-    self.ys: list of y positions of user click locations
 
 
     Example Useage
@@ -1358,24 +1355,14 @@ class drawContinuum:
     import matplotlib.pyplot as plt
     import numpy as np
     import asap_lib.spectra as sa
-    import asap_lib.cont_norm as cn
-
-    fig = plt.figure()
-    ax = plt.subplot(111)
-
-    ax.set_title('Click to place points along the continuum\n Press: 1 to place points, 0 to finish,
-     any other key to pause')
-
-    # ---------- Plot original spectrum
-    plt.plot(w,f)
 
     # ---------- Initialize and create continuum object
-    continuum = cn.drawContinuum(fig, ax, w, f)
+    continuum = sa.drawContinuum(w, f)
     continuum.connect()
 
     #
     #  ... User places points along the continuum ...
-    #
+    # (Tip: Use continuum.Help() to get a list of commands)
 
     # ---------- Normalize
     continuum.disconnect()
@@ -1386,72 +1373,123 @@ class drawContinuum:
 
     """
 
-    def __init__(self, fig, ax, w, f):
-        self.key = ['1']
-        self.done = [0]
+    def __init__(self, w, f):
+
+        fig = plt.figure(figsize=(8, 4))
+        ax1 = plt.subplot(211)
+        ax2 = plt.subplot(212, sharex=ax1)
+        plt.subplots_adjust(hspace=0.5)
+
+        self.ax1 = ax1
+        self.ax2 = ax2
 
         self.fig = fig
-        self.ax = ax
+        self.wave = w
+        self.flux = f
 
-        self.w = w
-        self.f = f
+        self.norm = None
+        self.cont = None
+        self.cid_click = None
+        self.cid_pick = None
+        self.cid_key = None
 
-        self.xs = []
-        self.ys = []
+        # ----- Plot
+        self.ax1.set_title('Original Spectrum')
+        self.ax2.set_title('Normalized Spectrum')
+        self.fig.supxlabel('Wavelength')
+        self.fig.supylabel('Flux')
+        self.ax1.plot(self.wave, self.flux, '-', picker=5)  # 5 points tolerance
+        self.xlim = copy.copy(self.ax1.get_xlim())
+        self.ylim = copy.copy(self.ax1.get_ylim())
 
-        self.cont = []
-        self.norm = []
-
-        # ----- Initialize the legend
-        blank = plt.scatter([], [])
-        leg = self.ax.legend([blank], ['On'], handlelength=0, handletextpad=0, fancybox=True, loc='upper right')
-        for item in leg.legendHandles:
-            item.set_visible(False)
+        self.ax2.set_ylim(0, 1.5)
+        self.ax2.hlines(1, self.xlim[0], self.xlim[1], alpha=0.25, color='grey', zorder=0)
 
     def connect(self):
         self.cid_click = self.fig.canvas.mpl_connect('button_press_event', self.onclick)
-        self.cid_press = self.fig.canvas.mpl_connect('key_press_event', self.onpress)
+        self.cid_pick = self.fig.canvas.mpl_connect('pick_event', self.onpick)
+        self.cid_key = self.fig.canvas.mpl_connect('key_press_event', self.ontype)
 
     def disconnect(self):
         self.fig.canvas.mpl_disconnect(self.cid_click)
-        self.fig.canvas.mpl_disconnect(self.cid_press)
+        self.fig.canvas.mpl_disconnect(self.cid_pick)
+        self.fig.canvas.mpl_disconnect(self.cid_key)
 
-    # -----  Define the events
+    def Help(self):
+        print('- Left click on the original spectrum (upper plot) to place points along the continuum ')
+        print('- Right click on the original spectrum (upper plot) to delete continuum points ')
+        print('- Continuum points cannot be placed when a toolbar item is active ')
+        print('- Hit h to return to the original view ')
+        print('- Hit r to clear all points ')
+        print('- Hit enter to create the continuum and normalize with it ')
+
+    # --------- Define Valid Events
+
+    # --- Place continuum points (do not place points if a toolbar button is active)
     def onclick(self, event):
+        # place a scatter point on the cursor location (as long as the cursor is within subplot1)
+        toolbar = plt.get_current_fig_manager().toolbar
+        if event.inaxes == self.ax1:
+            if event.button == 1 and toolbar.mode == '':
+                self.ax1.plot(event.xdata, event.ydata, 'ro', picker=5, label='cont_pnt')
 
-        # If the last keystroke was a 0, quit
-        if self.key[-1] == '0':
-            self.done.append(1)
-            self.fig.canvas.mpl_disconnect(self.cid_click)
+    # --- Select and remove continuum points with a right click
+    def onpick(self, event):
+        if event.mouseevent.button == 3:
+            if hasattr(event.artist, 'get_label') and event.artist.get_label() == 'cont_pnt':
+                event.artist.remove()
 
-        # If the last keystroke was a 1, place a scatter point on the cursor location
-        if self.key[-1] == '1':
-            self.ax.scatter(event.xdata, event.ydata, color='tab:red')
-            self.xs.append(event.xdata)
-            self.ys.append(event.ydata)
+    # --- Do stuff on key press
+    def ontype(self, event):
 
-        # If the last keystroke was anything else, do not place anymore points until the user hits 1 again
+        # If the pressed key was "r"
+        if event.key == 'r':
+            # Clear axis 1 and replot the original
+            plt.sca(self.ax1)
+            plt.cla()
+            self.ax1.plot(self.wave, self.flux, '-', picker=5)  # 5 points tolerance
+            self.ax1.set_title('Original Spectrum')
+            self.fig.supxlabel('Wavelength')
+            self.fig.supylabel('Flux')
 
-    def onpress(self, event):
-        self.key.append(event.key)
+            # Clear axis 2 and replot original
+            plt.sca(self.ax2)
+            plt.cla()
+            self.ax2.set_title('Normalized Spectrum')
+            self.ax2.set_ylim(0, 1.5)
+            self.ax2.hlines(1, self.xlim[0], self.xlim[1], alpha=0.25, color='grey', zorder=0)
 
-        blank = plt.scatter([], [])
+        # If the pressed key was "h"
+        if event.key == 'h':
+            self.ax1.set_xlim(self.xlim[0], self.xlim[1])
+            self.ax1.set_ylim(self.ylim[0], self.ylim[1])
 
-        if self.key[-1] == '0':
-            leg = self.ax.legend([blank], ['Done'], handlelength=0, handletextpad=0, fancybox=True, loc='upper right')
+            # If the key was "enter" connect the points by interpolating between them
+        if event.key == 'enter':
 
-        elif self.key[-1] == '1' and self.done[-1] != 1:
-            leg = self.ax.legend([blank], ['On'], handlelength=0, handletextpad=0, fancybox=True, loc='upper right')
+            plt.sca(self.ax1)
 
-        elif self.done[-1] != 1:
-            leg = self.ax.legend([blank], ['Paused'], handlelength=0, handletextpad=0, fancybox=True, loc='upper right')
+            cont_pnt_coord = []
 
-        for item in leg.legendHandles:
-            item.set_visible(False)
+            for artist in plt.gca().get_children():
+                if hasattr(artist, 'get_label') and artist.get_label() == 'cont_pnt':
+                    cont_pnt_coord.append(artist.get_data())
+                elif hasattr(artist, 'get_label') and artist.get_label() == 'continuum':
+                    artist.remove()
 
-    def normalize(self):
-        self.cont = np.interp(self.w, self.xs, self.ys)
-        self.norm = self.f / self.cont
+            cont_pnt_coord = np.array(cont_pnt_coord)[..., 0]
+            sort_array = np.argsort(cont_pnt_coord[:, 0])
+            x, y = cont_pnt_coord[sort_array].T
+            self.cont = np.interp(self.wave, x, y)
+            self.ax1.plot(self.wave, self.cont, 'r--', lw=2, label='continuum')
+
+            plt.sca(self.ax2)
+            self.norm = self.flux / self.cont
+            plt.cla()
+            self.ax2.set_title('Normalized Spectrum')
+            self.ax2.plot(self.wave, self.norm, '-g')
+            self.ax2.set_ylim(0, 1.5)
+            self.ax2.hlines(1, self.xlim[0], self.xlim[1], alpha=0.25, color='grey', zorder=0)
 
 
 # -----------------------------------------------------------------------------------------------------------------------
