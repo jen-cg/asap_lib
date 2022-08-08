@@ -168,6 +168,51 @@ def bin2xy(spectra, spaths, xypaths, xytype=None):
 
 
 # -----------------------------------------------------------------------------------------------------------------------
+def bin2xy_v2(spec, specpath, savepath, xytype=None):
+    """
+    Convert binary spectrum files to a .xy file since MOOG
+    will ultimately be used.
+
+    Parameters:
+        spec: str
+            File names of the spectra. Ex: 'PXXX'
+        specpath: str
+            Full Path to the binary spectra. Ex: '..Data/PXXX.bin'
+        savepath: str
+            Path to the output .xy spectra. Ex: '..Data/final_spectra/'
+        xytype: str
+            Format specifier of the output .xy spectra
+    Returns: .xy files in xypath
+    """
+
+    wave, flux, err = read_spec(os.path.join(specpath, spec + '.bin'), ftype='bin')
+
+    wave = np.asarray(wave)
+    flux = np.asarray(flux)
+
+    # Save spectrum as .xy file
+    if not xytype:
+        colheads = ['wave', 'flux']
+        table = Table([wave, flux], names=colheads)
+        ascii.write(table, os.path.join(savepath, spec + '.xy'))
+        print('Saving .xy file to ' + os.path.join(savepath, spec + '.xy'))
+
+    if xytype == 'MOOG':
+        lines = []
+        for j in range(len(wave)):
+            if j != len(wave) - 1:
+                line = str(round(wave[j], 8)) + ' ' + str(round(flux[j], 8)) + '\n'
+                lines.append(line)
+            else:
+                line = str(round(wave[j], 8)) + ' ' + str(round(flux[j], 8))
+                lines.append(line)
+
+        with open(os.path.join(savepath, spec + '.xy'), 'w') as file:
+            file.writelines(lines)
+            print('Saving .xy file to ' + os.path.join(savepath, spec + '.xy'))
+
+
+# -----------------------------------------------------------------------------------------------------------------------
 def fits2xy(spectra, spaths, xypaths, xytype=None):
     """
     Convert fits spectrum files to a .xy file since MOOG
