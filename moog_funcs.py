@@ -717,6 +717,242 @@ def parse_mlps(moog_lines_pars, line=None):
 
 
 # -----------------------------------------------------------------------------------------------------------------------
+def findlines_mooglooper(spec_name,
+                         spectrum,
+                         line_dictionary,
+                         model_atm,
+                         threshold=0.3,
+                         smogs=None,
+                         abundances=None,
+                         pm_spec=10.,
+                         pm_line=2.5,
+                         line_width=0.5,
+                         retrim=True,
+                         trim_sigma=[2.0, 2.0],
+                         ul_sigma=3.0,
+                         correct_rv=True,
+                         rv_tolerance=5.0,
+                         print_prog=False,
+                         plots=False,
+                         save_name=None,
+                         n_x_plots=1):
+    """
+    A moog looper function to identify strong lines in spectrum.  For creating line lists
+    -------
+    A function which loops through different lines and parameters, runs moog on these lines and parameters and compares
+    the resulting synthetic spectra to the observed spectra.  If the synthetic spectra are within certain threshold
+    compared to the observed spectra, these lines are kept and saved in a new dictionary.
+
+    :param spec_name: (string) Name of the object whose spectrum you wish to analyze
+    :param spectrum: (string) Path to the spectrum you wish to analyze
+    :param line_dictionary: (dict) The line list you wish to analyze in the dictionary format of func. lines_2_dict
+    :param model_atm: (string) The path to the model atmosphere
+
+    :param smogs: (list) The size of the Gaussian smoothing kernel in angstroms
+    :param abundances: (array) Test abundances
+    :param pm_spec: (float) Width with respect to spectral line when trimming
+    :param pm_line: (float) In the case of a single line, width of window around the line. In the case of several
+    lines, width from the lines with the minimum and maximum wavelengths.  In units of wavelength (angstroms)
+    :param line_width: (float) Estimated width of the spectral line in wavelength units (angstroms)
+    :param retrim: (True/False) Attempt to trim additional lines from the continuum ?
+    :param trim_sigma: [Upper bound, lower bound].  For use in attempting to remove additional lines when identifying
+    the continuum (retrim = True).  Keep only what is within [Upper bound, lower bound] sigma from the mean as the
+    continuum.  An appropriate choice of trim_sigma will depend on the signal-to-noise of the spectrum
+    :param ul_sigma: (float)  Upper limit sigma.  If the line depth is greater than ul_sigma times the continuum
+    standard deviation then upper_lim = False
+    :param correct_rv: (True/False) If True, correct the radial velocity
+    :param rv_tolerance: (float) Radial velocity tolerance
+    :param print_prog: (True/False) Print progress ?
+    :param plots: (True/False) Display plots?
+    :param save_name: (string/None) The name of / path to the file at which to save the plot
+    :param n_x_plots:
+
+    :return: The line dictionary updated with fit information
+    """
+
+    newDict = {}
+
+    # ----------------- Define the trimmed spectrum for future use (will be created in current working directory)
+    trim_spec = os.path.join(os.getcwd(), spec_name + '_trimmed.xy')
+
+    # ----------------- Define the MOOG output
+    smo_out = os.path.join(os.getcwd(), spec_name + '.sout')
+
+    # ----------------- Read in the lines from the line_dictionary omitting the "Atmosphere" entry
+    keys = line_dictionary.keys()
+    lines = []  # wavelength of each line in the line_dictionary
+    for k in keys:
+        if k != 'Atmosphere':
+            lines.append(k)
+
+    n_lines = len(lines)
+
+    newDict['Atmosphere'] = line_dictionary['Atmosphere']
+
+    # ----------------- Initialize plotting space if desired
+    # Initialize a subplot for each of the lines in the line list
+    if plots:
+        x_plots = n_x_plots
+        y_plots = int(round(n_lines / x_plots))
+
+        f, axs = plt.subplots(y_plots, x_plots, figsize=(8, 2 * y_plots))
+
+        if n_lines > 1:
+            axs = axs.ravel()
+        else:
+            axs = np.array([axs], dtype='object')
+
+        for i in range(n_lines, x_plots * y_plots):
+            axs[i].axis('off')
+
+        f.tight_layout()
+
+    # ----------------------------------------------Start the big loop-------------------------------------------------
+    t0 = time.time()
+
+    # ----------------- For each line in the line list...
+    for i, l in enumerate(lines):
+
+        if print_prog:
+            print('Starting line {:4d} of {:4d}'.format(i + 1, n_lines))
+
+        # ----------------- Extract the atomic info from the dictionary
+        atomic_info = line_dictionary[l]['Atomic Info']
+
+        # ----------------- Define the batch.par values
+        added_atoms = [int(round(atomic_info[0]))]  # Get the atomic number
+
+        # ----------------- Create a temporary line list with a single line
+        single_line_list(l, atomic_info, outlines='single_line.txt')
+
+        # ----------------- Trim the spectrum to a small window around the single line
+        trim_spec_2_linelist(spectrum, 'single_line.txt', pm_spec, trim_spec)
+
+        # ----------------- Read in the trimmed spectrum
+        pwave, pflux = read_spec(trim_spec, ftype='xy')
+
+        # ----------------- Determine if the line is an upper limit
+        diff, pflux_std, pflux_mean, upper_lim = determine_uls(pwave,
+                                                               pflux,
+                                                               l,
+                                                               ref_wave=None,
+                                                               ul_sigma=ul_sigma,
+                                                               line_width=line_width,
+                                                               wave_range=pm_line,
+                                                               trim_sigma=trim_sigma,
+                                                               retrim=retrim)
+
+        line_dictionary[l]['Upper Limit Info'] = np.array([diff, pflux_std, upper_lim])
+
+        sim_diffs = []
+        # ----------------- For each smoothing term...
+        for smog in smogs:
+            smog = round(smog, 2)
+            line_dictionary[l][smog] = []
+
+            # ----------------- Iterate through each of the test abundances
+            for j, a in enumerate(abundances):
+                a = round(a, 2)
+                added_abunds = [[a]]
+
+                # ----------------- Modify batch.par
+                mod_batch('batch.par',
+                          summary=os.path.join(os.getcwd(), spec_name + '.out'),
+                          smoothed=smo_out,
+                          spectrum=trim_spec,
+                          model=model_atm,
+                          linelist='single_line.txt',
+                          limits=True,
+                          wave_range=pm_spec,
+                          plotpars=True,
+                          smo=smog,
+                          synth=True,
+                          nsynth=1,
+                          atoms=added_atoms,
+                          abunds=added_abunds)
+
+                # ----------------- Run moog
+                run_moog()
+
+                # ----------------- Parse the MOOG output (extract the MOOG smoothed synthetic spectrum)
+                specs = parse_synth_out(smo_out, 1)[0]
+                swave = np.asarray(specs[0], dtype=float)
+                sflux = np.asarray(specs[1], dtype=float)
+
+                # ----------------- Estimate how well the observed spectrum matches the synthetic one
+                abs_abund, ref_m = parse_moog_out(os.path.join(os.getcwd(), spec_name + '.out'))
+
+                abund_info = [a, smog, abs_abund, ref_m]
+
+                line_dictionary, plot_stuffs = fit_line(abund_info,
+                                                        pwave,
+                                                        pflux,
+                                                        swave,
+                                                        sflux,
+                                                        l,
+                                                        line_dictionary,
+                                                        pm_line,
+                                                        diff,
+                                                        pflux_mean,
+                                                        rv_corr=correct_rv,
+                                                        rv_tol=rv_tolerance,
+                                                        print_rv=False)
+
+                # -----------------
+                interp_s = interp1d(plot_stuffs[2], plot_stuffs[3], kind='cubic')
+                interp_o = interp1d(plot_stuffs[2], plot_stuffs[4] + diff, kind='cubic')
+
+                if interp_s(l) <= 0.99:
+                    sim_diff = abs(interp_s(l) - interp_o(l)) / interp_o(l)
+                    sim_diffs.append(sim_diff)
+
+                # ----------------- Plot the shifted observed spectrum and the synthetic spectrum at this abundance
+                # and smoothing
+                if plots:
+                    # Observed spectrum shifted
+                    axs[i].plot(plot_stuffs[2], plot_stuffs[4] + diff, c='k')
+
+                    axs[i].scatter(l, interp_o(l), c='k')
+                    axs[i].scatter(l, interp_s(l))
+
+                    # Synthetic spectrum
+                    axs[i].plot(plot_stuffs[2], plot_stuffs[3])
+                    n_sigma = 1.0 - (ul_sigma * pflux_std)
+
+                    # Add the reference lines
+                    axs[i].axhline(1.0, ls='--', c='k')
+                    axs[i].axhline(1.0 + pflux_std, ls=':', c='gray')
+                    axs[i].axhline(1.0 - pflux_std, ls=':', c='gray')
+                    axs[i].axhline(n_sigma, ls=':', c='gray')
+
+                    #
+                    axs[i].axvline(l)
+
+        # -----------------
+        status = 'fail'
+        for item in sim_diffs:
+            if item <= threshold:
+                status = 'pass'
+                newDict[l] = line_dictionary[l]
+
+        # ----------------- Add a title to the plot
+        if plots:
+            axs[i].set_title('{}: {}. Status: {}'.format(atomic_info[0], l, status))
+
+    # ----------------- Save plot
+    if save_name:
+        print('Saving the plot to ' + save_name + '.png')
+        f.savefig(save_name + '.png', format='png')
+
+    # ----------------- Print elapsed time
+    t1 = time.time()
+    if print_prog:
+        print('Elapsed time: %s s' % round(t1 - t0))
+
+    return newDict
+
+
+# -----------------------------------------------------------------------------------------------------------------------
 def moog_looper(spec_name,
                 spectrum,
                 line_dictionary,
@@ -1247,6 +1483,7 @@ def find_best_abunds(line_dict, ul_sigma=3.0):
 
             # ----------------- Calculate bounds
             # Bounds based on line depths and continuum uncertainty
+            # Note: These bounds are used in determining "good" lines
 
             # Get the difference in the synthetic spectrum depths compared to the best synthetic spectrum depth
             sdepth_diffs = np.abs(sdepths - best_depth)

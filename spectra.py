@@ -7,7 +7,7 @@ from astropy.stats import sigma_clip
 from scipy import interpolate
 import scipy.stats as spst
 import copy
-from scipy.ndimage.filters import gaussian_filter, gaussian_filter1d, median_filter
+from scipy.ndimage import median_filter, gaussian_filter1d, gaussian_filter
 
 # ----------------- Import the other files of functions
 module_path = os.path.abspath(os.path.join('..'))
@@ -1227,6 +1227,7 @@ def find_order_splits(wave, flux, orders):
     good_order.append([late_gaps[-1][1], np.max(wave)])
 
     return good_order
+
 
 # -----------------------------------------------------------------------------------------------------------------------
 def contnorm_sigclip(y, sigma_lower, sigma_upper):

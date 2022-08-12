@@ -91,6 +91,45 @@ def lines_2_dict(linelist, stellar_parameters, single=True):
 
 
 # -----------------------------------------------------------------------------------------------------------------------
+def dict_2_linelist(dct, spath):
+    """
+    Create a line list from the entries of a dictionary
+
+    :param dct: The dictionary which contains the line information
+    :param spath: Path to save the line list to
+
+    Saves a line list as a txt file
+    """
+
+    # ----------------- Remove atmosphere information from the dictionary
+    dct.pop('Atmosphere', None)
+
+    # ----------------- Extract line information from the dictionary
+    newlines = ['#\n']
+
+    for line in list(dct.keys()):
+        l = line
+        info = dct[line]['Atomic Info']
+
+        # Create padding for each element
+        w_a_s = ' ' * (10 - len(str(info[0])))
+        a_e_s = ' ' * (10 - len(str(info[1])))
+        e_g_s = ' ' * (10 - len(str(info[2])))
+
+        # Write to a string: wavelength, atmoic_number.ionization state, ep, loggf
+        string = str(l) + w_a_s + str(info[0]) + a_e_s + str(info[1]) + e_g_s + str(info[2]) + ' \n'
+
+        newlines.append(string)
+
+    # ----------------- Remove new line character from the last line
+    newlines[-1] = newlines[-1].strip('\n')
+
+    # ----------------- Write the final line list
+    with open(spath, 'w') as f:
+        f.writelines(newlines)
+
+
+# -----------------------------------------------------------------------------------------------------------------------
 def ul_lines_2_dict(linelist, old_linelist, stellar_parameters, single=True):
     lwave, latom, lep, llgf = read_linelist(linelist)
     owave, oatom, oep, olgf = read_linelist(old_linelist)

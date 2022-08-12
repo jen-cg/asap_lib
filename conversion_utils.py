@@ -32,8 +32,8 @@ def rvCoordinateCorrections(rv, telescope=None, long=None, lat=None, elevation=N
     :param minute: If isot_time is not given, specify the minute of the observation in UTC
     :param second: If isot_time is not given, specify the second of the observation in UTC
 
-    :param objLoc_CDS: Location of the object on the sky (ra, dec) in CDS_objLoc "hr min sec degree min sec" format as
-    if you copy the location directly from CDS
+    :param objLoc_CDS: Location of the object on the sky (ra, dec, J2000) in CDS_objLoc "hr min sec degree min sec"
+     format as if you copy the location directly from CDS
     :param objLoc_ra: If objLoc_CDS is not given, ra of the object in degrees
     :param objLoc_dec: If objLoc_CDS is not given, dec of the object in degrees
 
