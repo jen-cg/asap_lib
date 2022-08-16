@@ -17,12 +17,13 @@ import os
 import sys
 import time
 import subprocess
+import multiprocessing
+import shutil
 
 # ----------------- Import the other files of functions
 module_path = os.path.abspath(os.path.join('..'))
 if module_path not in sys.path:
     sys.path.append(module_path)
-
 from asap_lib.spectra import *
 from asap_lib.line_list_utils import *
 
@@ -30,6 +31,7 @@ from asap_lib.line_list_utils import *
 # Could also be something like '/usr/local/moognov19/MOOGSILENT'
 
 moog_silent_call = 'MOOGSILENT'  # '/arc5/usr/local/bin/MOOGSILENT'
+
 
 # -----------------------------------------------------------------------------------------------------------------------
 def moogstring2float(string):
@@ -646,7 +648,7 @@ def fit_line(abund_info,
     # ---------------- Calculate the Chi square residual between the observed and synthetic flux
     # Old:   r_mean = np.nansum(((ssflux - (ioflux + diff)) ** 2) / ssflux)
 
-    r_mean = np.nansum(((ssflux - (ioflux / cont_flux_mean )) ** 2) / ssflux)
+    r_mean = np.nansum(((ssflux - (ioflux / cont_flux_mean)) ** 2) / ssflux)
 
     statistic = [abund, abs_abund, ref_m, rv, sdepth, r_mean]
 
@@ -717,10 +719,56 @@ def parse_mlps(moog_lines_pars, line=None):
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def findlines_mooglooper(spec_name,
-                         spectrum,
-                         line_dictionary,
-                         model_atm,
+def _findlines_mooglooper_setup(name, processes=1):
+    """
+    Make the needed folders and copy the necessary content into them for multiprocessing the moog loooper
+    ------
+
+    In order to run the moog looper code in a multiprocess way, we need to run each process in its own working directory.
+    This code will create a folder for each process and copy necessary content into it
+
+    """
+
+    for i in range(1, processes + 1):
+        folder = '_findlines_mooglooper_process' + str(i)
+
+        # If the subfolder does not exist, make it
+        exists = os.path.isdir(folder)
+        if not exists:
+            os.mkdir(folder)
+
+        # Move a copy of the batch.par file to the subfolder
+        shutil.copyfile('batch.par', folder + '/batch.par')
+
+        # Move a copy of the model atmosphere to the subfolder
+        shutil.copyfile(name + '.mmod', folder + '/' + name + '.mmod')
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def _findlines_mooglooper_cleanup(processes):
+    """
+    Delete the folders and their contents used in multiprocessing the moog loooper
+    ------
+
+    In order to run the moog looper code in a multiprocess way, we need to run each process in its own working directory.
+    This code will create a folder for each process and copy necessary content into it.
+
+    This function will delete those folders.  For use once multiprocessing is finished.
+
+    """
+
+    for i in range(1, processes + 1):
+        folder = '_findlines_mooglooper_process' + str(i)
+
+        shutil.rmtree(folder, ignore_errors=True)
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def findlines_mooglooper(line_dictionary,
+                         process_number=None,
+                         spec_name='',
+                         spectrum='',
+                         model_atm='',
                          threshold=0.3,
                          smogs=None,
                          abundances=None,
@@ -734,8 +782,7 @@ def findlines_mooglooper(spec_name,
                          rv_tolerance=5.0,
                          print_prog=False,
                          plots=False,
-                         save_name=None,
-                         n_x_plots=1):
+                         savefolder=None):
     """
     A moog looper function to identify strong lines in spectrum.  For creating line lists
     -------
@@ -743,11 +790,17 @@ def findlines_mooglooper(spec_name,
     the resulting synthetic spectra to the observed spectra.  If the synthetic spectra are within certain threshold
     compared to the observed spectra, these lines are kept and saved in a new dictionary.
 
+    Note: This function is set up to be compatible with multiprocessing.  This means that plots will not be displayed in
+    the notebook. They will be saved to a designated folder.
+
+    :param line_dictionary: (dict) The line list you wish to analyze in the dictionary format of func. lines_2_dict
+    :param process_number: (int) The number of the processes you are running.  If you are not using multiprocessing this is None.
+
     :param spec_name: (string) Name of the object whose spectrum you wish to analyze
     :param spectrum: (string) Path to the spectrum you wish to analyze
-    :param line_dictionary: (dict) The line list you wish to analyze in the dictionary format of func. lines_2_dict
     :param model_atm: (string) The path to the model atmosphere
-
+    :param threshold: (float)The minimum of a generated synthetic spectrum for the given line must be within
+    (threshold*100) percent  of the corresponding location in the observed spectrum to be kept
     :param smogs: (list) The size of the Gaussian smoothing kernel in angstroms
     :param abundances: (array) Test abundances
     :param pm_spec: (float) Width with respect to spectral line when trimming
@@ -764,19 +817,23 @@ def findlines_mooglooper(spec_name,
     :param rv_tolerance: (float) Radial velocity tolerance
     :param print_prog: (True/False) Print progress ?
     :param plots: (True/False) Display plots?
-    :param save_name: (string/None) The name of / path to the file at which to save the plot
-    :param n_x_plots:
+    :param savefolder: (string/None) The name of / path to the file at which to save the plot
 
     :return: The line dictionary updated with fit information
     """
 
+    # -----------------
     newDict = {}
 
+    # -----------------
+    if process_number:
+        os.chdir('_findlines_mooglooper_process' + str(process_number))
+
     # ----------------- Define the trimmed spectrum for future use (will be created in current working directory)
-    trim_spec = os.path.join(os.getcwd(), spec_name + '_trimmed.xy')
+    trim_spec = spec_name + '_trimmed.xy'
 
     # ----------------- Define the MOOG output
-    smo_out = os.path.join(os.getcwd(), spec_name + '.sout')
+    smo_out = spec_name + '.sout'
 
     # ----------------- Read in the lines from the line_dictionary omitting the "Atmosphere" entry
     keys = line_dictionary.keys()
@@ -789,24 +846,6 @@ def findlines_mooglooper(spec_name,
 
     newDict['Atmosphere'] = line_dictionary['Atmosphere']
 
-    # ----------------- Initialize plotting space if desired
-    # Initialize a subplot for each of the lines in the line list
-    if plots:
-        x_plots = n_x_plots
-        y_plots = int(round(n_lines / x_plots))
-
-        f, axs = plt.subplots(y_plots, x_plots, figsize=(8, 2 * y_plots))
-
-        if n_lines > 1:
-            axs = axs.ravel()
-        else:
-            axs = np.array([axs], dtype='object')
-
-        for i in range(n_lines, x_plots * y_plots):
-            axs[i].axis('off')
-
-        f.tight_layout()
-
     # ----------------------------------------------Start the big loop-------------------------------------------------
     t0 = time.time()
 
@@ -815,6 +854,13 @@ def findlines_mooglooper(spec_name,
 
         if print_prog:
             print('Starting line {:4d} of {:4d}'.format(i + 1, n_lines))
+
+        # ----------------- Initialize plotting space if desired
+        # Initialize a subplot for each of the lines in the line list
+        if plots:
+            f, axs = plt.subplots(1, 1, figsize=(8, 2))
+
+            f.tight_layout()
 
         # ----------------- Extract the atomic info from the dictionary
         atomic_info = line_dictionary[l]['Atomic Info']
@@ -857,7 +903,7 @@ def findlines_mooglooper(spec_name,
 
                 # ----------------- Modify batch.par
                 mod_batch('batch.par',
-                          summary=os.path.join(os.getcwd(), spec_name + '.out'),
+                          summary=spec_name + '.out',
                           smoothed=smo_out,
                           spectrum=trim_spec,
                           model=model_atm,
@@ -880,7 +926,7 @@ def findlines_mooglooper(spec_name,
                 sflux = np.asarray(specs[1], dtype=float)
 
                 # ----------------- Estimate how well the observed spectrum matches the synthetic one
-                abs_abund, ref_m = parse_moog_out(os.path.join(os.getcwd(), spec_name + '.out'))
+                abs_abund, ref_m = parse_moog_out(spec_name + '.out')
 
                 abund_info = [a, smog, abs_abund, ref_m]
 
@@ -910,23 +956,23 @@ def findlines_mooglooper(spec_name,
                 # and smoothing
                 if plots:
                     # Observed spectrum shifted
-                    axs[i].plot(plot_stuffs[2], plot_stuffs[4] + diff, c='k')
+                    axs.plot(plot_stuffs[2], plot_stuffs[4] + diff, c='k')
 
-                    axs[i].scatter(l, interp_o(l), c='k')
-                    axs[i].scatter(l, interp_s(l))
+                    axs.scatter(l, interp_o(l), c='k')
+                    axs.scatter(l, interp_s(l))
 
                     # Synthetic spectrum
-                    axs[i].plot(plot_stuffs[2], plot_stuffs[3])
+                    axs.plot(plot_stuffs[2], plot_stuffs[3])
                     n_sigma = 1.0 - (ul_sigma * pflux_std)
 
                     # Add the reference lines
-                    axs[i].axhline(1.0, ls='--', c='k')
-                    axs[i].axhline(1.0 + pflux_std, ls=':', c='gray')
-                    axs[i].axhline(1.0 - pflux_std, ls=':', c='gray')
-                    axs[i].axhline(n_sigma, ls=':', c='gray')
+                    axs.axhline(1.0, ls='--', c='k')
+                    axs.axhline(1.0 + pflux_std, ls=':', c='gray')
+                    axs.axhline(1.0 - pflux_std, ls=':', c='gray')
+                    axs.axhline(n_sigma, ls=':', c='gray')
 
                     #
-                    axs[i].axvline(l)
+                    axs.axvline(l)
 
         # -----------------
         status = 'fail'
@@ -935,14 +981,13 @@ def findlines_mooglooper(spec_name,
                 status = 'pass'
                 newDict[l] = line_dictionary[l]
 
-        # ----------------- Add a title to the plot
+        # ----------------- Add a title and save the plot
         if plots:
-            axs[i].set_title('{}: {}. Status: {}'.format(atomic_info[0], l, status))
+            axs.set_title('{}: {}. Status: {}'.format(atomic_info[0], l, status))
 
-    # ----------------- Save plot
-    if save_name:
-        print('Saving the plot to ' + save_name + '.png')
-        f.savefig(save_name + '.png', format='png')
+            plt.ioff()
+            save_name = str(l) + '_Status_' + status
+            f.savefig(savefolder + '/' + save_name + '.png', format='png')
 
     # ----------------- Print elapsed time
     t1 = time.time()
@@ -950,6 +995,70 @@ def findlines_mooglooper(spec_name,
         print('Elapsed time: %s s' % round(t1 - t0))
 
     return newDict
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def findlines_multiprocess_driver(line_dict, kwargs, processes=multiprocessing.cpu_count()):
+    """
+    The driver function for running findlines_mooglooper with multiprocessing
+    ---
+    The function findlines_mooglooper can be run with multiprocessing by breaking up the line list into a number of sections
+    and running findlines_mooplooper on each section. Each section of the dictionary is run through findlines_mooplooper
+    in its own folder.  These folders will be deleted after the process has finished.
+
+    :param line_dict: (dict) The full dictionary of lines you wish to run findlines_mooglooper on
+    :param kwargs: (dict)  A dictionary of arguments to pass to findlines_mooglooper.  These arguments will be common to each
+    process running findlines_mooglooper.
+    :param processes: (int) Optional: The number of processes you wish to run.  Will default to the number of cpu's
+
+    Returns: A dictionary of the final line list
+
+    Example
+    ----
+
+    threshold = 0.3  # The minimum of a generated synthetic spectrum for the given line must be within threshold*100 percent  of the observed line to be kept
+
+    kwargs = {'spec_name':name,
+            'spectrum':spectrum,
+            'model_atm':model_in,
+            'threshold': threshold,
+            'smogs': smogs,
+            'abundances': test_abunds,
+            'retrim':True,
+            'trim_sigma':[5.0, 1.2],
+            'ul_sigma':3.0,
+            'correct_rv':False,
+            'print_prog':False,
+            'plots':True,
+            'savefolder':'/arc5/home/jglover/ASAP/'+name+'_findlines_plots' }
+
+
+    final_dict = findlines_multiprocess_driver(line_dict, kwargs, processes=3)
+    """
+
+    _findlines_mooglooper_setup(kwargs['spec_name'], processes=processes)
+
+    final = []
+    with multiprocessing.Pool(processes) as pool:
+
+        mp_params = splitDict(line_dict, processes)
+
+        results = [pool.apply_async(findlines_mooglooper, args=p, kwds=kwargs) for p in mp_params]
+
+        for r in results:
+            final.append(r.get())
+
+    # -- Parse Output
+    final_dict = {}
+    for item in final:
+        for key in item.keys():
+            if key != 'Atmosphere':
+                final_dict[key] = item[key]
+
+    # --- Clean up
+    _findlines_mooglooper_cleanup(processes)
+
+    return final_dict
 
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -1061,14 +1170,14 @@ def moog_looper(spec_name,
 
         # ----------------- Determine if the line is an upper limit
         diff, pflux_std, pflux_mean, upper_lim = determine_uls(pwave,
-                                                   pflux,
-                                                   l,
-                                                   ref_wave=None,
-                                                   ul_sigma=ul_sigma,
-                                                   line_width=line_width,
-                                                   wave_range=pm_line,
-                                                   trim_sigma=trim_sigma,
-                                                   retrim=retrim)
+                                                               pflux,
+                                                               l,
+                                                               ref_wave=None,
+                                                               ul_sigma=ul_sigma,
+                                                               line_width=line_width,
+                                                               wave_range=pm_line,
+                                                               trim_sigma=trim_sigma,
+                                                               retrim=retrim)
 
         line_dictionary[l]['Upper Limit Info'] = np.array([diff, pflux_std, upper_lim])
 
@@ -1267,14 +1376,14 @@ def moog_best_lines(spec_name,
 
         # ----------------- Determine if the line is an upper limit
         diff, pflux_std, pflux_mean, upper_lim = determine_uls(pwave,
-                                                   pflux,
-                                                   l,
-                                                   ref_wave=None,
-                                                   ul_sigma=ul_sigma,
-                                                   line_width=line_width,
-                                                   wave_range=pm_line,
-                                                   trim_sigma=trim_sigma,
-                                                   retrim=retrim)
+                                                               pflux,
+                                                               l,
+                                                               ref_wave=None,
+                                                               ul_sigma=ul_sigma,
+                                                               line_width=line_width,
+                                                               wave_range=pm_line,
+                                                               trim_sigma=trim_sigma,
+                                                               retrim=retrim)
 
         line_dictionary[l]['Upper Limit Info'] = np.array([diff, pflux_std, upper_lim])
 
@@ -1634,12 +1743,12 @@ def moog_blend_looper(spec_name, spectrum, line_dictionary, model_atm,
 
     # Determine if the line is an upper limit
     diff, pflux_std, pflux_mean, upper_lim = determine_uls(pwave, pflux, lwaves,
-                                               ref_wave=ref_wave,
-                                               ul_sigma=ul_sigma,
-                                               line_width=line_width,
-                                               wave_range=pm_line,
-                                               trim_sigma=trim_sigma,
-                                               retrim=retrim)
+                                                           ref_wave=ref_wave,
+                                                           ul_sigma=ul_sigma,
+                                                           line_width=line_width,
+                                                           wave_range=pm_line,
+                                                           trim_sigma=trim_sigma,
+                                                           retrim=retrim)
 
     line_dictionary['Upper Limit Info'] = np.array([diff, pflux_std, upper_lim])
 
@@ -1690,18 +1799,18 @@ def moog_blend_looper(spec_name, spectrum, line_dictionary, model_atm,
         abund_info = [a, smog, abs_abund, ref_m]
 
         line_dictionary, plot_stuffs = fit_line(abund_info,
-                                                        pwave,
-                                                        pflux,
-                                                        swave,
-                                                        sflux,
-                                                        lwaves,
-                                                        line_dictionary,
-                                                        pm_line,
-                                                        diff,
-                                                        pflux_mean,
-                                                        rv_corr=correct_rv,
-                                                        rv_tol=rv_tolerance,
-                                                        print_rv=False)
+                                                pwave,
+                                                pflux,
+                                                swave,
+                                                sflux,
+                                                lwaves,
+                                                line_dictionary,
+                                                pm_line,
+                                                diff,
+                                                pflux_mean,
+                                                rv_corr=correct_rv,
+                                                rv_tol=rv_tolerance,
+                                                print_rv=False)
 
         if plots:
             plt.plot(plot_stuffs[2], plot_stuffs[4] + diff, c='k')
@@ -1932,12 +2041,12 @@ def moog_best_blend(spec_name, spectrum, line_dictionary, model_atm,
 
     # Determine if the line is an upper limit
     diff, pflux_std, pflux_mean, upper_lim = determine_uls(pwave, pflux, lwaves,
-                                               ref_wave=ref_wave,
-                                               ul_sigma=ul_sigma,
-                                               line_width=line_width,
-                                               wave_range=pm_line,
-                                               trim_sigma=trim_sigma,
-                                               retrim=retrim)
+                                                           ref_wave=ref_wave,
+                                                           ul_sigma=ul_sigma,
+                                                           line_width=line_width,
+                                                           wave_range=pm_line,
+                                                           trim_sigma=trim_sigma,
+                                                           retrim=retrim)
 
     line_dictionary['Upper Limit Info'] = np.array([diff, pflux_std, upper_lim])
 
@@ -1997,18 +2106,18 @@ def moog_best_blend(spec_name, spectrum, line_dictionary, model_atm,
         abund_info = [a, smog, abs_abund, ref_m]
 
         line_dictionary, plot_stuffs = fit_line(abund_info,
-                                                        pwave,
-                                                        pflux,
-                                                        swave,
-                                                        sflux,
-                                                        lwaves,
-                                                        line_dictionary,
-                                                        pm_line,
-                                                        diff,
-                                                        pflux_mean,
-                                                        rv_corr=correct_rv,
-                                                        rv_tol=rv_tolerance,
-                                                        print_rv=False)
+                                                pwave,
+                                                pflux,
+                                                swave,
+                                                sflux,
+                                                lwaves,
+                                                line_dictionary,
+                                                pm_line,
+                                                diff,
+                                                pflux_mean,
+                                                rv_corr=correct_rv,
+                                                rv_tol=rv_tolerance,
+                                                print_rv=False)
 
         if plots:
             # plot_stuffs = [oswave, osflux, sswave, ssflux, ioflux]

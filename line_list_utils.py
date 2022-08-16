@@ -1,13 +1,14 @@
 import numpy as np
 import os
 import sys
+from itertools import islice
+import math
 
 # ----------------- Import the other files of functions
 module_path = os.path.abspath(os.path.join('..'))
 if module_path not in sys.path:
     sys.path.append(module_path)
 from asap_lib.handleSpectra import read_spec
-
 
 """
 Line list Utilities 
@@ -300,7 +301,7 @@ def trim_linelist_2_spectrum(spectrum, line_list, ftype='xy', saveName=None):
     # ----------------- Save updated line list
     if saveName is None:
         with open(line_list, 'w') as f:
-            print('Saving trimmed line list to '+line_list)
+            print('Saving trimmed line list to ' + line_list)
             f.writelines(trimmed_list)
     else:
         with open(saveName, 'w') as f:
@@ -504,3 +505,50 @@ def reorder_linelist(line_list, saveName=None):
         with open(saveName, 'w') as f:
             print('Saving re-ordered list to ' + saveName)
             f.writelines(lst)
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def _chunks(data, size=10000):
+    """
+    Helper function for splitting a dictionary
+    ---
+    Creates an iterator to go split the dictionary into sections with length *size*
+    (Will round to the nearest whole number of entries. If the length of the original dictionary is not divisible
+    by the number of chunks, then the chunks will not have the same number of entries.  Note all entries of the original
+    dictionary will be included in the chunks)
+
+    returns an iterator for the dictionary chunks
+    """
+    it = iter(data)
+
+    for i in range(0, len(data), size):
+        yield {k: data[k] for k in islice(it, size)}
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def splitDict(dct, num_groups):
+    """
+    Split a dictionary into a number of groups of (~)equal size
+    ---
+    Useful for applying a multiprocessing approach to the moog looper
+
+    returns a list of dictionaries
+    """
+
+    # --- Copy the dictionary and remove the atmosphere information
+    d2 = dct.copy()
+    d2.pop("Atmosphere", None)
+
+    # --- Determine how many items per group
+    n = len(d2)
+    m = num_groups
+    x = math.ceil(n / m)
+
+    # --- Split the remaining parts of the dictionary into groups
+    results = []
+    for i, item in enumerate(_chunks(d2, x)):
+        # Add back in the atmosphere information
+        item['Atmosphere'] = dct['Atmosphere']
+        results.append((item, i + 1))
+
+    return results
