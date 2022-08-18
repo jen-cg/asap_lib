@@ -312,6 +312,8 @@ def trim_linelist_2_spectrum(spectrum, line_list, ftype='xy', saveName=None):
 # -----------------------------------------------------------------------------------------------------------------------
 def trim_lines_from_list(line_list, remove_lines, saveName=None):
     """
+    Remove lines from the given line list according to their wavelength
+    ------
 
     :param line_list: (string) Path to the list where each line has the format: "wave ....."
     :param remove_lines: (list of floats) List of wavelengths of the lines to remove from the list
@@ -330,6 +332,91 @@ def trim_lines_from_list(line_list, remove_lines, saveName=None):
         try:
             lw = float(split[0])
             if lw not in remove_lines:
+                trimmed_list.append(l)
+        except:
+            pass
+
+    # ----------------- Remove newline character from the last line of the file
+    trimmed_list[-1] = trimmed_list[-1].strip('\n')
+
+    # ----------------- Save updated line list
+    if saveName is None:
+        with open(line_list, 'w') as f:
+            print('Saving trimmed list to ' + line_list)
+            f.writelines(trimmed_list)
+    else:
+        with open(saveName, 'w') as f:
+            print('Saving trimmed list to ' + saveName)
+            f.writelines(trimmed_list)
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def trim_species_from_list(line_list, species, saveName=None):
+    """
+    Remove lines from the given line list according to their species
+    ------
+
+    :param line_list: (string) Path to the list where each line has the format: "wave ....."
+    :param species: (list of floats) List of species of the lines to remove from the list
+    :param saveName: (None or string) If None, save the trimmed line list under the original name,  or else specify the
+    name of the trimmed line list
+
+    Saves new trimmed list
+    """
+    # ----------------- Read in the line list
+    with open(line_list, 'r') as f:
+        lines = f.readlines()
+
+    # ----------------- Extract the information from each line
+    trimmed_list = ['#\n']
+    for i, l in enumerate(lines):
+        split = l.split()
+        try:
+            lspecies = float(split[1])
+            if lspecies not in species:
+                trimmed_list.append(l)
+        except:
+            pass
+
+    # ----------------- Remove newline character from the last line of the file
+    trimmed_list[-1] = trimmed_list[-1].strip('\n')
+
+    # ----------------- Save updated line list
+    if saveName is None:
+        with open(line_list, 'w') as f:
+            print('Saving trimmed list to ' + line_list)
+            f.writelines(trimmed_list)
+    else:
+        with open(saveName, 'w') as f:
+            print('Saving trimmed list to ' + saveName)
+            f.writelines(trimmed_list)
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def keep_only_species_in_list(line_list, species, saveName=None):
+    """
+    Keep lines from the given line list if they belong to a specific species
+    ------
+
+    :param line_list: (string) Path to the list where each line has the format: "wave ....."
+    :param species: species: (list of floats) List of species of the lines to keep in the list
+    :param saveName: (None or string) If None, save the trimmed line list under the original name,  or else specify the
+    name of the trimmed line list
+
+    Saves new trimmed list
+    """
+
+    # ----------------- Read in the line list
+    with open(line_list, 'r') as f:
+        lines = f.readlines()
+
+    # ----------------- Extract the information from each line
+    trimmed_list = ['#\n']
+    for i, l in enumerate(lines):
+        split = l.split()
+        try:
+            lspecies = float(split[1])
+            if lspecies in species:
                 trimmed_list.append(l)
         except:
             pass
