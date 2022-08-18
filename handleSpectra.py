@@ -18,6 +18,8 @@ def read_spec(spath, ftype='fits'):
      A function to read a GRACES spectrum and extract the wavelengths, flux, and error
 
     -- If the wavelengths are in nm convert them to angstroms
+
+    Supported data structures/ file types: 'fits', 'cfits', 'ghostfits', 'bin', 'xy'
     """
 
     # -----------------
@@ -28,18 +30,6 @@ def read_spec(spath, ftype='fits'):
         flux = spectra[0].data[1]
         err = spectra[0].data[4]
 
-        # Convert from nm to A if needed
-        if np.max(wave) < 3000.:
-            wave *= 10.
-
-        return wave, flux, err
-
-    # -----------------
-    if ftype == 'bin':
-        spectra = pickle.load(open(spath, 'rb'))
-        wave = spectra['wave']
-        flux = spectra['flux']
-        err = spectra['err']
         # Convert from nm to A if needed
         if np.max(wave) < 3000.:
             wave *= 10.
@@ -63,6 +53,32 @@ def read_spec(spath, ftype='fits'):
             wave = 10. * wave
 
         return wave, flux
+
+    # -----------------
+    if ftype == 'ghostfits':
+        spectra = fits.open(spath)
+
+        wave = spectra[7].data.flatten()
+        flux = spectra[5].data.flatten()
+        err = spectra[6].data.flatten()
+
+        # Convert from nm to A if needed
+        if np.max(wave) < 3000.:
+            wave *= 10.
+
+        return wave, flux, err
+
+    # -----------------
+    if ftype == 'bin':
+        spectra = pickle.load(open(spath, 'rb'))
+        wave = spectra['wave']
+        flux = spectra['flux']
+        err = spectra['err']
+        # Convert from nm to A if needed
+        if np.max(wave) < 3000.:
+            wave *= 10.
+
+        return wave, flux, err
 
     # -----------------
     if ftype == 'xy':
