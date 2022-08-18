@@ -19,7 +19,7 @@ Read line lists, trim line lists, convert line lists to dictionaries and more
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def read_linelist(linelist):
+def read_linelist(linelist, returnFileLines=False):
     """
     Read a line list where each line has the format: "wave atom ep lgf"
     - wave: is the wavelength of the transition (angstroms)
@@ -28,6 +28,8 @@ def read_linelist(linelist):
     - lgf: is log(gf) which is a measure of the probability
 
     :param linelist: (string) Name of / path to the line list
+    :param returnFileLines: (True/False) Return the formatted lines of the files?
+
     :return: (arrays) Lists of wavelength, atoms, ep, and lgf
     """
 
@@ -53,8 +55,12 @@ def read_linelist(linelist):
     # ----------------- Convert lists to arrays
     lwave, latom, lep, llgf = np.asarray(lwave), np.asarray(latom), np.asarray(lep), np.asarray(llgf)
 
-    return lwave, latom, lep, llgf
+    # ----------------- Return
+    if not returnFileLines:
+        return lwave, latom, lep, llgf
 
+    elif returnFileLines:
+        return lines, lwave, latom, lep, llgf
 
 # -----------------------------------------------------------------------------------------------------------------------
 def lines_2_dict(linelist, stellar_parameters, single=True):
