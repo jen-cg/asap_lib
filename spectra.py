@@ -274,6 +274,42 @@ def spec_interp(spectra,
 
 
 # -----------------------------------------------------------------------------------------------------------------------
+def interp_2_constant_dwgrid(wave, flux, err, kind='cubic', saveName=None):
+    """
+    Interpolate a spectrum onto a wavelength grid with constant spacing in wavelength (dw)
+    ----------
+    Example use: before radial velocity correcting a spectrum the spectrum must be on a wavelength grid with constant
+    spacing in wavelength (dw)
+
+    :param list wave: Wavelength array
+    :param list flux: Flux array corresponding to the wavelength array
+    :param list err:  Error array corresponding to the wavelength array
+    :param str kind: Kind of the interpolation. ie 'linear' 'quadratic' 'cubic'
+    :param str saveName: Name and path to save the interpolated spectrum to
+
+    :return: If saveName = None, the  interpolated arrays will be returned
+
+    """
+    # ----------------- Interpolate the flux and error spectra
+    interpFunc_flux = interpolate.interp1d(wave, flux, kind=kind)
+    interpFunc_err = interpolate.interp1d(wave, err, kind=kind)
+
+    # ----------------- Define a new wavelength grid
+    new_w = np.linspace(min(wave), max(wave), len(wave))
+
+    # ----------------- Evaluate the flux and error functions along the new wavelength grid
+    new_f = interpFunc_flux(new_w)
+    new_e = interpFunc_err(new_w)
+
+    # ----------------- Save or return
+    if saveName:
+        write2bin(new_w, new_f, new_e, saveName)
+
+    else:
+        return new_w, new_f, new_e
+
+
+# -----------------------------------------------------------------------------------------------------------------------
 def list_duplicates_of(seq, item):
     """
     Search a list of objects (seq) and return the indices corresponding to all instances of (item)
