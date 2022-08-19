@@ -377,3 +377,37 @@ def write2bin(wave, flux, err, spath):
     table = Table([wave, flux, err], names=colheads)
 
     pickle.dump(table, open(spath + '.bin', 'wb'))
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def xy_2_bin(spectrum, spath):
+    """
+    Convert a .xy file with columns wave, flux, err to a .bin file
+    -----
+
+    :param spectrum: (str) Path to the spectrum
+    :param spath: (str) Name of the spectrum (excluding file extension)
+
+    saves a file at spath/spectrum.bin
+    """
+    # ---- Open xy file
+    with open(spath + spectrum + '.xy', 'r') as f:
+        lines = f.readlines()
+
+        wave = []
+        flux = []
+        err = []
+        for i, l in enumerate(lines):
+            if '#' not in l:
+                split = l.split()
+                wave.append(float(split[0]))
+                flux.append(float(split[1]))
+                err.append(float(split[2]))
+
+        wave, flux, err = np.asarray(wave), np.asarray(flux), np.asarray(err)
+
+    # ---- Write to table
+    colheads = ['wave', 'flux', 'err']
+    table = Table([wave, flux, err], names=colheads)
+
+    pickle.dump(table, open(spath + spectrum + '.bin', 'wb'))

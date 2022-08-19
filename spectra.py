@@ -1395,6 +1395,10 @@ class drawContinuum:
         self.cid_pick = None
         self.cid_key = None
 
+        self.reference = False
+        self.ref_w = None
+        self.ref_f = None
+
         # ----- Plot
         self.ax1.set_title('Original Spectrum')
         self.ax2.set_title('Normalized Spectrum')
@@ -1424,6 +1428,13 @@ class drawContinuum:
         print('- Hit h to return to the original view ')
         print('- Hit r to clear all points ')
         print('- Hit enter to create the continuum and normalize with it ')
+
+    def addReference(self, ref_w, ref_f):
+        self.reference = True
+        self.ref_w = ref_w
+        self.ref_f = ref_f
+
+        self.ax2.plot(self.ref_w, self.ref_f, color='grey', alpha=0.5, lw=2, zorder=0)
 
     # --------- Define Valid Events
 
@@ -1492,6 +1503,8 @@ class drawContinuum:
             self.ax2.plot(self.wave, self.norm, '-g')
             self.ax2.set_ylim(0, 1.5)
             self.ax2.hlines(1, self.xlim[0], self.xlim[1], alpha=0.25, color='grey', zorder=0)
+            if self.reference:
+                self.ax2.plot(self.ref_w, self.ref_f, color='grey', alpha=0.5, lw=2, zorder=0)
 
 
 # -----------------------------------------------------------------------------------------------------------------------
