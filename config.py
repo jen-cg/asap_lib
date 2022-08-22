@@ -7,14 +7,10 @@ Paths to data and default parameters
 """
 
 # -----------------------------------------------------------------------------------------------------------------------
-# CHANGE ME: Path to the overarching directory where your spectra are stored (BE SURE THIS DIRECTORY ALREADY EXISTS)
-dataDir = '/arc5/home/jglover/Data/'
-
-# -----------------------------------------------------------------------------------------------------------------------
 # Paths to model atmospheres
-spherical_model_atm_path = os.path.join(os.getcwd(), 'asap_lib/data/grids/standard/sphere/')
+spherical_model_atm_path = os.path.join('/astro/jglover/ASAP/asap_lib/data/grids/standard/sphere/')
 
-plane_parallel_model_atm_path = os.path.join(os.getcwd(), 'asap_lib/data/grids/standard/plane/')
+plane_parallel_model_atm_path = os.path.join('/astro/jglover/ASAP/asap_lib/data/grids/standard/plane/')
 
 # -----------------------------------------------------------------------------------------------------------------------
 # Default Parameters
