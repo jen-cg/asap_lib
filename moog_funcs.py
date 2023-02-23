@@ -1250,6 +1250,10 @@ def moog_looper(spec_name,
                     axs[i].axhline(1.0 - pflux_std, ls=':', c='gray')
                     axs[i].axhline(n_sigma, ls=':', c='gray')
 
+                    # Set the y-limits of the plot
+                    ymin, ymax = axs[i].get_ylim()
+                    axs[i].set_ylim(ymin, 1.2)
+
         # ----------------- Add a title to the plot
         if plots:
             axs[i].set_title('%s: %s' % (atomic_info[0], l))
@@ -1480,6 +1484,10 @@ def moog_best_lines(spec_name,
                     axs[i].axhline(1.0 + pflux_std, ls=':', c='gray')
                     axs[i].axhline(1.0 - pflux_std, ls=':', c='gray')
                     axs[i].axhline(n_sigma, ls=':', c='gray')
+
+                    # Set the y-limits of the plot
+                    ymin, ymax = axs[i].get_ylim()
+                    axs[i].set_ylim(ymin, 1.2)
 
         # ----------------- Add a title to the plot
         if plots:
@@ -1821,6 +1829,7 @@ def moog_blend_looper(spec_name, spectrum, line_dictionary, model_atm,
             plt.axhline(1.0 - pflux_std, ls=':', c='gray')
             plt.axhline(n_sigma, ls=':', c='gray')
             plt.legend(loc='lower right')
+
 
     t1 = time.time()
 
