@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib.pyplot as plt
+from astropy.table import Table
 import os
 import sys
 
@@ -187,7 +189,7 @@ def calc_fe(moog_lines_pars, include_uls=False, print_new_Fe=False):
     feIIh, feIIh_err, n_feII = calc_abunds(moog_lines_pars, [26.1, 'Fe II'], include_uls=include_uls)
 
     mean_fe = -999  # Initialize as -999
-    mean_fe_err = -999 # Initialize as -999
+    mean_fe_err = -999  # Initialize as -999
     n_fe = -999  # Initialize as -999
 
     # ----------------- If a non-zero number of lines were used for both FeI and FeII
@@ -291,6 +293,7 @@ def calc_XFe(other_moog_lines_pars, fe_moog_lines_pars, include_uls=False, print
     # ----------------- Return
     outs = np.asarray(outs)
     return outs
+
 
 # -----------------------------------------------------------------------------------------------------------------------
 def calc_blends_abunds(final_blends_mlps, include_uls=False, absolute=False):
@@ -427,4 +430,90 @@ def calc_blends_abunds(final_blends_mlps, include_uls=False, absolute=False):
 
         return xh, xh_err, n_lines
 
+
 # -----------------------------------------------------------------------------------------------------------------------
+def exciteAbund(mlps_file, speciesCode, printResults=True):
+    """
+    From the mlps file, find the abundance, excitation potential and associated errors
+    for the species with the specified code (ie speciesCode == 26.0 for Fe I)
+
+    Code Reference/Inspiration: Fredrico Sesito (SpectroTeffCheck.ipynb)
+    """
+
+    # ------------------------
+    data = Table.read(mlps_file, format='ascii')
+
+    species = np.asarray(data['col2'])
+    ep = np.asarray(data['col3'])
+    abund = np.asarray(data['col8'])
+    abund_err = np.asarray(data['col7'])
+
+    # ------------------------
+    good = np.where(species == speciesCode)[0]
+
+    if len(good) == 0:
+        print('The mlps file does not contain the specified species')
+
+    else:
+
+        species_abund = abund[good]
+        species_abund_err = abund_err[good]
+        species_ep = ep[good]
+
+        # Fit a line to the excitation potential and abundances
+        weights = 1 / species_abund_err
+        fit, _, _ = np.polyfit(species_ep, species_abund, 1, w=weights, full=True)
+
+        # Create a false array of excitation potentials spanning the true data
+        min_ep = species_ep.min()
+        max_ep = species_ep.max()
+        pm = 0.5
+        ep_arr = np.linspace(min_ep - pm, max_ep + pm, 100)
+
+        expected_abund = fit[0] * ep_arr + fit[1]
+
+        min_abund = species_abund.min()
+
+        if printResults:
+            print('Median abundance for {} is {:.3f}'.format(speciesCode, np.median(species_abund)))
+            print('Standard deviation in abundance for {} is {:.3f}'.format(speciesCode, np.std(species_abund)))
+
+        return [species_ep, species_abund, species_abund_err, ep_arr, min_ep, min_abund, fit, expected_abund]
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def plot_Fe_ExciteAbund(fe_mlps, printResults=True):
+    """
+    Plot the abundance vs excitation potential for iron (Fe I and Fe II) from the specified mlps file
+
+    Code Reference/Inspiration: Fredrico Sesito (SpectroTeffCheck.ipynb)
+    """
+    # ---------------------------
+    fig = plt.figure(figsize=(8, 4))
+    plt.suptitle('Abundance vs Excitation Potential\n')
+
+    ax1 = plt.subplot(211)
+    plt.title('Fe I')
+    feI_ep, feI_abund, feI_abund_err, ep_arr, min_ep, min_abund, fit, expected_abund = exciteAbund(fe_mlps, 26.0,
+                                                                                                   printResults)
+
+    plt.errorbar(feI_ep, feI_abund, yerr=feI_abund_err, linestyle='None', marker='o', ms=8)
+    plt.plot(ep_arr, expected_abund, c='k', ls=':', label='Slope: {:.3f}'.format(fit[0]))
+
+    plt.legend()
+    plt.xlabel('Excitation Potential (eV)')
+    plt.ylabel('A(Fe I)')
+
+    ax2 = plt.subplot(212)
+    plt.title('Fe II')
+    feII_ep, feII_abund, feII_abund_err, ep_arr, min_ep, min_abund, fit, expected_abund = exciteAbund(fe_mlps, 26.1,
+                                                                                                      printResults)
+
+    plt.errorbar(feII_ep, feII_abund, yerr=feII_abund_err, linestyle='None', marker='o', ms=8)
+    plt.plot(ep_arr, expected_abund, c='k', ls=':', label='Slope: {:.3f}'.format(fit[0]))
+
+    plt.legend()
+    plt.xlabel('Excitation Potential (eV)')
+    plt.ylabel('A(Fe II)')
+
+    plt.subplots_adjust(hspace=0.75)
