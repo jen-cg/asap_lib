@@ -13,13 +13,20 @@ Handle Spectra
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def read_spec(spath, ftype='fits'):
+def read_spec(spath, ftype='fits', IFU=0):
     """
      A function to read a GRACES spectrum and extract the wavelengths, flux, and error
 
     -- If the wavelengths are in nm convert them to angstroms
 
-    Supported data structures/ file types: 'fits', 'cfits', 'ghostfits', 'bin', 'xy'
+    Supported data structures/ file types: 'fits', 'cfits', 'ghostfits', 'bin', 'xy', 'xyz'
+
+    Note: The fits files from GHOST may have different extensions.
+    If you are extracting data from GHOST fits files be aware of the IFU mode (defaults to 0)
+
+    'xyz' is a new file type being introduced which has wavelength, flux, and error data in three columns of that order.
+    It is identical to xy files with the addition of a third column for error.
+    This is meant to resolve confusion with 'xy' files which have different numbers of columns
     """
 
     # -----------------
@@ -58,9 +65,9 @@ def read_spec(spath, ftype='fits'):
     if ftype == 'ghostfits':
         spectra = fits.open(spath)
 
-        wave = spectra[7].data.flatten()
-        flux = spectra[5].data.flatten()
-        err = spectra[6].data.flatten()
+        wave = spectra[7].data
+        flux = spectra[5].data[:, IFU]
+        err = spectra[6].data[:, IFU]
 
         # Convert from nm to A if needed
         if np.max(wave) < 3000.:
@@ -101,6 +108,30 @@ def read_spec(spath, ftype='fits'):
             wave = 10. * wave
 
         return wave, flux
+
+    # -----------------
+    if ftype == 'xyz':
+
+        with open(spath, 'r') as f:
+            lines = f.readlines()
+
+        wave = []
+        flux = []
+        err = []
+        for i, l in enumerate(lines):
+            if '#' not in l:
+                split = l.split()
+                wave.append(float(split[0]))
+                flux.append(float(split[1]))
+                err.append(float(split[2]))
+
+        wave, flux, err = np.asarray(wave), np.asarray(flux), np.asarray(err)
+
+        # Convert from nm to A if needed
+        if np.max(wave) < 3000.:
+            wave = 10. * wave
+
+        return wave, flux, err
 
 
 # -----------------------------------------------------------------------------------------------------------------------
@@ -331,16 +362,57 @@ def bin2DAOxy(spectra, spaths, xypaths, lims=None, masks=None):
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def write2xy(wave, flux, err, spath):
+def write2xy(wave, flux, spath):
     """
-    Write a .xy spectral file from wavelength, flux, and flux error arrays
+    Write a .xy spectral file from wavelength, and flux arrays
+
+    :param wave:  (array-like) Wavelength array
+    :param flux: (array-like) Flux array corresponding to the wavelengths in wave
+    :param spath: (str) Path to file you wish to save.  Ie Data/name
+
+    Saves a .xy file at spath
+    """
+    if len(wave) != len(flux) or len(wave):
+        raise TypeError("Wavelength, flux, and error arrays must be the same length")
+
+    lines = []
+    for j in range(len(wave)):
+        if j != len(wave) - 1:
+            line = str(round(wave[j], 8)) + ' ' + str(round(flux[j], 8)) + '\n'
+            lines.append(line)
+        else:
+            line = str(round(wave[j], 8)) + ' ' + str(round(flux[j], 8))
+            lines.append(line)
+
+    with open(spath + '.xy', 'w') as file:
+        file.writelines(lines)
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def xyz2xy(spath):
+    """
+    A convenience function to convert a .xyz file to a .xy file
+    Writes a .xy spectral file
+
+    :param spath: (str) Path to file you wish to save.  Ie Data/name
+
+    Saves a .xy file at spath
+    """
+    wave, flux, err = read_spec(spath, ftype='xyz')
+    write2xy(wave, flux, spath)
+
+
+# -----------------------------------------------------------------------------------------------------------------------
+def write2xyz(wave, flux, err, spath):
+    """
+    Write a .xyz spectral file from wavelength, flux, and flux error arrays
 
     :param wave:  (array-like) Wavelength array
     :param flux: (array-like) Flux array corresponding to the wavelengths in wave
     :param err: (array-like) Flux error array corresponding to the wavelengths in wave
     :param spath: (str) Path to file you wish to save.  Ie Data/name
 
-    Saves a .xy file at spath
+    Saves a .xyz file at spath
     """
     if len(wave) != len(flux) or len(wave) != len(err):
         raise TypeError("Wavelength, flux, and error arrays must be the same length")
@@ -354,7 +426,7 @@ def write2xy(wave, flux, err, spath):
             line = str(round(wave[j], 8)) + ' ' + str(round(flux[j], 8)) + ' ' + str(round(err[j], 8))
             lines.append(line)
 
-    with open(spath + '.xy', 'w') as file:
+    with open(spath + '.xyz', 'w') as file:
         file.writelines(lines)
 
 
@@ -380,9 +452,9 @@ def write2bin(wave, flux, err, spath):
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def xy_2_bin(spectrum, spath):
+def xyz_2_bin(spectrum, spath):
     """
-    Convert a .xy file with columns wave, flux, err to a .bin file
+    Convert a .xyz file with columns wave, flux, err to a .bin file
     -----
 
     :param spectrum: (str) Path to the spectrum
@@ -390,8 +462,8 @@ def xy_2_bin(spectrum, spath):
 
     saves a file at spath/spectrum.bin
     """
-    # ---- Open xy file
-    with open(spath + spectrum + '.xy', 'r') as f:
+    # ---- Open xyz file
+    with open(spath + spectrum + '.xyz', 'r') as f:
         lines = f.readlines()
 
         wave = []
