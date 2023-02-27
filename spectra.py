@@ -1875,3 +1875,34 @@ def find_continuum2(wave, flux, sigma_lower, sigma_upper):
     # ---------------- Return the continuum wavelengths and fluxes
     return clip_wave, clip_flux
 
+
+# -----------------------------------------------------------------------------------------------------------------------
+def spectrum_replaceNaN(f, e=None, fill_value=0, change_err=True, fill_error=1e99):
+    """
+    Replace inf or nan values of flux with a specified value
+
+    :param f: (array) An array of  flux values
+    :param e: (array) An array of corresponding error values
+    :param fill_value: Value to change all inf and nan to
+    :param change_err: (True/False) change the error of points with inf or nan values
+    :param fill_error: Value to change the error to
+
+    return The changed flux and error arrays
+    """
+
+    mask1 = np.array([np.isnan(val) for val in f])
+    mask2 = np.array([np.isinf(val) for val in f])
+    mask = np.logical_or(mask1, mask2)
+
+    ind = np.where(mask == True)[0]
+
+    f_change = f.copy()
+    f_change[ind] = fill_value
+
+    if e is not None:
+        e_change = e.copy()
+        if change_err:
+            e_change[ind] = fill_error
+            return f_change, e_change
+    else:
+        return f_change
