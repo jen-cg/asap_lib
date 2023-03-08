@@ -786,8 +786,14 @@ def rvcor(spectra,
         print('')
         print('Correcting ', names[n])
 
+        # ----------------- Automatic Detect File Type
+        ftype = s.split('.')[1]
+        if ftype not in ['bin', 'xyz']:
+            print('Data type must be .bin or .xyz\nSkipping {},{}'.format(n, s))
+            continue
+
         # ----------------- Read in (observed) spectra
-        spectrum = read_spec(os.path.join(obs_path, s), ftype='bin')
+        spectrum = read_spec(os.path.join(obs_path, s), ftype=ftype)
         wave = spectrum[0]
         flux = spectrum[1]
         err = spectrum[2]
