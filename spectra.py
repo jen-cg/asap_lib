@@ -681,6 +681,7 @@ def rvcor(spectra,
           synth_spec,
           synth_path,
           names,
+          ftype_synth=None,
           rv_elems='all',
           manual_rv=None,
           save_out_spec=True,
@@ -727,26 +728,12 @@ def rvcor(spectra,
         rv_elems = ['Mg', 'Na', 'Ca', 'Ha', 'Hb']
 
     # ----------------- Read in synthetic spectra
-    # (Assumes synthetic spectrum must be in a fits file )
-    synthd = fits.open(synth_path + synth_spec)
 
-    hdr = synthd[0].header
-    naxis1 = hdr['NAXIS1']
-    crval1 = hdr['CRVAL1']
-    cdelt1 = hdr['CDELT1']
+    # -------- Automatic Detect File Type
+    if ftype_synth is None:
+        ftype_synth = synth_spec.split('.')[1]
 
-    # synth = pickle.load(open(synth_path + synth_spec,'rb'))
-    # synth = ascii.read(synth_path + synth_spec)
-    # s_wave = synth['wave']
-    # s_flux = synth['flux']
-
-    # ----------------- Create a wavelength array for the synthetic spectrum and store information about it
-    s_wave = np.linspace(crval1, crval1 + (naxis1 * cdelt1), naxis1)
-    s_flux = synthd[0].data
-
-    # Convert from nm to A if needed
-    if np.max(s_wave) < 3000.:
-        s_wave = 10. * s_wave
+    s_wave, s_flux, *s_err = read_spec(synth_path + synth_spec, ftype=ftype_synth)
 
     # ----------------- Chop the synthetic spectrum
     '''Isolate and keep only sections of the synthetic spectrum around the Mg b lines (5167A, 5172A, 5183A), 
