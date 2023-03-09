@@ -415,7 +415,8 @@ def spec_chop(wave, flux, elems_list):
     wave: the wavelength array of the spectrum to chop
     flux: the corresponding flux array of the spectrum to chop
     elems: a list of elements around whose spectral lines we want to chop
-    (must be some combination of ['Mg', 'Ca', 'Ha', 'Hb']
+    (must be some combination of ['Mg', 'CaT', 'Ha', 'Hb', 'Hepsilon', Hgamma', 'Hdelta', 'SrII_4215.524',
+    'BaII_4554.030', 'FeII_4923.922', 'FeI_4957.596', 'FeII_5018.435', 'FeI_5269.537', 'CaI_6122.217' ] )
     """
 
     waves = []
@@ -436,7 +437,7 @@ def spec_chop(wave, flux, elems_list):
             fluxes.append(flux[good])
 
         # ----------------- Calcium Triplet: 8498A, 8542A and 8662A
-        if e == 'Ca':
+        if e == 'CaT':
             good = np.where((wave >= 8450.) & (wave <= 8700.))[0]
             waves.append(wave[good])
             fluxes.append(flux[good])
@@ -462,6 +463,66 @@ def spec_chop(wave, flux, elems_list):
         # ----------------- Oxygen (telluric)
         if e == 'O_Tell':
             good = np.where((wave >= 7750.) & (wave <= 7800.))[0]
+            waves.append(wave[good])
+            fluxes.append(flux[good])
+
+        # ----------------- H-epsilon: 3970.072
+        if e == 'Hepsilon':
+            good = np.where((wave >= 3925) & (wave <= 4015.))[0]
+            waves.append(wave[good])
+            fluxes.append(flux[good])
+
+        # ----------------- H-delta: 4101.734
+        if e == 'Hdelta':
+            good = np.where((wave >= 4056) & (wave <= 4146))[0]
+            waves.append(wave[good])
+            fluxes.append(flux[good])
+
+        # ----------------- Sr-II: 4215.524
+        if e == 'SrII_4215.524':
+            good = np.where((wave >= 4080) & (wave <= 4170))[0]
+            waves.append(wave[good])
+            fluxes.append(flux[good])
+
+        # ----------------- H-gamma: 4340.462
+        if e == 'Hgamma':
+            good = np.where((wave >= 4295) & (wave <= 4385))[0]
+            waves.append(wave[good])
+            fluxes.append(flux[good])
+
+        # ----------------- Ba-II: 4554.030
+        if e == 'BaII_4554.030':
+            good = np.where((wave >= 4509) & (wave <= 4599))[0]
+            waves.append(wave[good])
+            fluxes.append(flux[good])
+
+        # ----------------- Fe-II: 4923.922
+        if e == 'FeII_4923.922':
+            good = np.where((wave >= 4879) & (wave <= 4969))[0]
+            waves.append(wave[good])
+            fluxes.append(flux[good])
+
+        # ----------------- Fe-I: 4957.596
+        if e == 'FeI_4957.596':
+            good = np.where((wave >= 4912) & (wave <= 5002))[0]
+            waves.append(wave[good])
+            fluxes.append(flux[good])
+
+        # ----------------- Fe-II: 5018.435
+        if e == 'FeII_5018.435':
+            good = np.where((wave >= 4973) & (wave <= 5063))[0]
+            waves.append(wave[good])
+            fluxes.append(flux[good])
+
+        # ----------------- Fe-I: 5269.537
+        if e == 'FeI_5269.537':
+            good = np.where((wave >= 5224) & (wave <= 5314))[0]
+            waves.append(wave[good])
+            fluxes.append(flux[good])
+
+        # ----------------- Ca-I: 6122.217
+        if e == 'CaI_6122.217':
+            good = np.where((wave >= 6077) & (wave <= 6167))[0]
             waves.append(wave[good])
             fluxes.append(flux[good])
 
@@ -725,7 +786,8 @@ def rvcor(spectra,
         save_plot_path = obs_path
 
     if rv_elems == 'all':
-        rv_elems = ['Mg', 'Na', 'Ca', 'Ha', 'Hb']
+        rv_elems = ['Mg', 'CaT', 'Ha', 'Hb', 'Hepsilon', 'Hgamma', 'Hdelta', 'SrII_4215.524',
+                    'BaII_4554.030', 'FeII_4923.922', 'FeI_4957.596', 'FeII_5018.435', 'FeI_5269.537', 'CaI_6122.217']
 
     # ----------------- Read in synthetic spectra
 
@@ -736,8 +798,7 @@ def rvcor(spectra,
     s_wave, s_flux, *s_err = read_spec(synth_path + synth_spec, ftype=ftype_synth)
 
     # ----------------- Chop the synthetic spectrum
-    '''Isolate and keep only sections of the synthetic spectrum around the Mg b lines (5167A, 5172A, 5183A), 
-    the Na D lines (5896AA, 5890AA), and/or the Calcium Triplet (8498A, 8542 A, 8662 A) 
+    '''Isolate and keep only sections of the synthetic spectrum around the lines
 
         - s_waves is an array with a certain number of sub arrays (= to the number of elements chosen).  Each 
         sub-array corresponds to the spectrum chopped around an element. '''
