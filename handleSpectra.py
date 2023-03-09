@@ -13,7 +13,7 @@ Handle Spectra
 
 
 # -----------------------------------------------------------------------------------------------------------------------
-def read_spec(spath, ftype='fits', IFU=0):
+def read_spec(spath, ftype=None, IFU=0):
     """
      A function to read a GRACES spectrum and extract the wavelengths, flux, and error
 
@@ -29,6 +29,10 @@ def read_spec(spath, ftype='fits', IFU=0):
     This is meant to resolve confusion with 'xy' files which have different numbers of columns
     """
 
+    # -------- Automatic Detect File Type
+    if ftype is None:
+        ftype = spath.split('.')[-1]
+        print('Automatically detecting file type.... I think it is .{}'.format(ftype))
     # -----------------
     if ftype == 'fits':
         # Read in a .fits spectrum and pull the wavelength, flux, and error arrays
