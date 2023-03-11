@@ -376,7 +376,7 @@ def write2xy(wave, flux, spath):
 
     Saves a .xy file at spath
     """
-    if len(wave) != len(flux) or len(wave):
+    if len(wave) != len(flux):
         raise TypeError("Wavelength, flux, and error arrays must be the same length")
 
     lines = []
